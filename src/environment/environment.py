@@ -7,14 +7,41 @@ from spade.message import Message
 import asyncio
 import spade
 
+from disaster import Disaster
+
 
 # Define the Environment class to represent the air traffic control environment
 class Environment:
     def __init__(self):
         # Initialize environment variables, e.g., aircraft positions, weather, runways, etc.
-        self.aircraft_positions = {}
-        self.weather_conditions = {}
-        self.runway_status = {}
+        self.size = 10
+        self.board = [[Disaster() for _ in range(self.size)] for _ in range(self.size)]
+
+    def display(self):
+        # Display the board, printing '0' if emergency is None, otherwise the emergency value
+        for row in self.board:
+            print(" ".join(map(str, row)))
+
+
+    def setTile(self, x_axis, y_axis, operation, value):
+        if operation == "emergency":
+            self.board[x_axis][y_axis].setEmergency(value)
+
+        elif operation == "food":
+            self.board[x_axis][y_axis].setFoodToProvide(value)
+
+        elif operation == "people":
+            self.board[x_axis][y_axis].setPeopleToRescue(value)
+
+        elif operation == "medicine":
+            self.board[x_axis][y_axis].setMedicineToProvide(value)
+
+        elif operation == "blockage":
+            self.board[x_axis][y_axis].setBlockageStatus(value)
+
+        elif operation == "communication":
+            self.board[x_axis][y_axis].setCommunication(value)
+
 
     def update_aircraft_position(self, aircraft_id, position):
         self.aircraft_positions[aircraft_id] = position
@@ -124,4 +151,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    spade.run(main())
+    # spade.run(main())
+    env = Environment()
+
+    env.display()   
