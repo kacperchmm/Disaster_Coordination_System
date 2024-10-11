@@ -1,6 +1,6 @@
 class Disaster:
     def __init__(self):
-        self.emergency = "None"
+        self.emergency = "Safe"
         self.food_to_provide  = 0
         self.people_to_rescue = 0
         self.medicine_to_provide = 0
@@ -44,7 +44,7 @@ class Disaster:
         return self.communication_status
 
     def removeDisaster(self):
-        self.emergency = "None"
+        self.emergency = "Safe"
         self.food_to_provide  = 0
         self.people_to_rescue = 0
         self.medicine_to_provide = 0
@@ -52,4 +52,4 @@ class Disaster:
         self.communication_status = True
 
     def __repr__(self):
-        return '0' if self.emergency is "None" else "#"
+        return '0' if self.emergency is "Safe" else "\033[31m#\033[0m"

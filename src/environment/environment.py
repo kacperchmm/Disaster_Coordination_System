@@ -6,6 +6,9 @@ from spade.message import Message
 
 import asyncio
 import spade
+import os
+import time
+import random
 
 from disaster import Disaster
 
@@ -19,6 +22,7 @@ class Environment:
 
     def display(self):
         # Display the board, printing '0' if emergency is None, otherwise the emergency value
+        os.system("clear")
         for row in self.board:
             print(" ".join(map(str, row)))
 
@@ -42,30 +46,25 @@ class Environment:
         elif operation == "communication":
             self.board[x_axis][y_axis].setCommunication(value)
 
+    def getTile(self, x_axis, y_axis, operation):
+        if operation == "emergency":
+            return self.board[x_axis][y_axis].getEmergency()
 
-    def update_aircraft_position(self, aircraft_id, position):
-        self.aircraft_positions[aircraft_id] = position
-        print(self.aircraft_positions)
+        elif operation == "food":
+            return self.board[x_axis][y_axis].getFoodToProvide()
 
-    def update_weather(self, weather_data):
-        self.weather_conditions = weather_data
-        print(self.weather_conditions)
+        elif operation == "people":
+            return self.board[x_axis][y_axis].getPeopleToRescue()
 
-    def update_runway_status(self, runway_id, status):
-        self.runway_status[runway_id] = status
-        print(self.runway_status)
+        elif operation == "medicine":
+            return self.board[x_axis][y_axis].getMedicineToProvide()
 
-    def get_aircraft_position(self):
-        #
-        pass
+        elif operation == "blockage":
+            return self.board[x_axis][y_axis].getBlockageStatus()
 
-    def get_weather_data(selfself):
-        #
-        pass
+        elif operation == "communication":
+            return self.board[x_axis][y_axis].getCommunication()
 
-    def get_runway_status(self):
-        #
-        pass
 
 
 class AirTrafficControlAgent(Agent):
@@ -154,4 +153,14 @@ if __name__ == "__main__":
     # spade.run(main())
     env = Environment()
 
-    env.display()   
+    random_iteration = 7
+    random_rows = random.sample(range(0, 9), random_iteration)
+    random_columns = random.sample(range(0, 9), random_iteration)
+
+    for i in range(random_iteration):
+        env.display()
+        env.setTile(random_rows[i], random_columns[i], "emergency", "TEST")
+
+        time.sleep(1) 
+
+
