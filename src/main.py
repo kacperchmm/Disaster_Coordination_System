@@ -4,22 +4,23 @@ from spade.behaviour import CyclicBehaviour
 from spade.template import Template
 from spade.message import Message
 
+from agents.civilianAgent import CivilianAgent
+from agents.respondAgent import ResponderAgent
+
 import asyncio
 import spade
 
-if __name__ == "__main__":
-    # Create agents here ...
+async def main():
+    # Create and initiali               ze the environment
+    # remember to pass an environment to agents
+    # atc_environment = Environment()
 
-    async def main():
-    # Create and initialize the environment
-    atc_environment = Environment()
+    civilian_agent = CivilianAgent("civilian@localhost", "civilian")
 
-    atc_agent = AirTrafficControlAgent("admin@localhost", "admin", atc_environment)
+    responder_agent = ResponderAgent("responder@localhost", "responder")
 
-    aircraft_agent = AircraftAgent("user1@localhost", "user", atc_environment)
-
-    await atc_agent.start(auto_register=True)
-    await aircraft_agent.start(auto_register=True)
+    await civilian_agent.start(auto_register=True)
+    await responder_agent.start(auto_register=True)
 
 
 if __name__ == "__main__":
