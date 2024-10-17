@@ -13,21 +13,7 @@ import spade
 import time
 import random
 
-async def main():
-    # Create and initiali               ze the environment
-    # remember to pass an environment to agents
-    # atc_environment = Environment()
-
-    civilian_agent = CivilianAgent("civilian@localhost", "civilian")
-
-    responder_agent = ResponderAgent("responder@localhost", "responder")
-
-    await civilian_agent.start(auto_register=True)
-    await responder_agent.start(auto_register=True)
-
-
-if __name__ == "__main__":
-    env = Environment()
+def randomEmergencyGenerator(env):
     random_iteration = 7
     random_rows = random.sample(range(0, 9), random_iteration)
     random_columns = random.sample(range(0, 9), random_iteration)
@@ -38,5 +24,27 @@ if __name__ == "__main__":
 
         time.sleep(1) 
 
+async def main():
+    env = Environment()
+
+    # randomEmergencyGenerator(env)
+    responder_agent = ResponderAgent("responder@localhost", "responder", env)
+
+    await responder_agent.start(auto_register=True)
+
+    emergency_settings = {
+        "x_position": 1,
+        "y_position": 1,
+        "emergency_type": "fire",
+        "food": 32904,
+        "people": 92313,
+        "medicine": 154,
+        "blockage": False,
+        "communication": True
+    }
+
+    await env.setTile(emergency_settings)
+
+if __name__ == "__main__":
     spade.run(main())
     
