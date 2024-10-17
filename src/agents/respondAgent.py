@@ -34,7 +34,7 @@ class ResponderAgent(Agent):
                 await self.send(response)
 
         async def setup(self):
-            print("Responder agent starting...")
+            print("Responder agent on job")
             responder_behaviour = self.ResponderBehaviour()
             self.add_behaviour(responder_behaviour)
 
