@@ -3,6 +3,22 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 
+from simulation import spinningCircle
+
+def parseMessage(message):
+    parts = message.split(',')
+
+    if len(parts) != 3:
+        raise ValueError("Wrong format of message!\n Expected: '<str>,<number>,<number>'")
+
+    string_value = parts[0]
+    try:
+        number1 = int(parts[1])
+        number2 = int(parts[2])
+    except ValueError:
+        raise ValueError("The second and third values must be valid integers.")
+
+    return string_value, number1, number2
 
 """
 The attributes that can be set in a template are:
@@ -22,18 +38,40 @@ in the template must be equal in the message for this to match.
 """
 
 class ResponderAgent(Agent):
+    def __init__(self, jid, password, environment):
+        super().__init__(jid, password)
+        self.environment = environment
+
     class ResponderResponseBehaviour(CyclicBehaviour):
+        def __init__(self, environment):
+            super().__init__()
+            self.environment = environment
+
         async def run(self):
             msg = await self.receive(timeout=10)  # Wait for incoming messages
             if msg:
                 print(f"Responder received message: {msg.body}")
-                response = Message(to=msg.sender)  
-                response.set_metadata("performative", "inform")
-                response.body = "Acknowledging request. Help is on the way."
-                await self.send(response)
+                emergency_need, x_axis, y_axis = parseMessage(msg.body)
 
-        async def setup(self):
-            print("Responder agent sarting...")
-            responder_behaviour = self.ResponderBehaviour()
-            self.add_behaviour(responder_behaviour)
+                print(f"Suplying {emergency_need} on tile [{x_axis}, {y_axis}]")
+
+                tile_changes = {
+                    "x_position": x_axis,
+                    "y_position": y_axis,
+                    "emergency_type": "Safe"
+                }
+
+                spinningCircle.spinner(5)
+
+                await self.environment.setTile(tile_changes)
+
+                #
+                # TODO: Closing a civilian agent
+                #
+
+
+    async def setup(self):
+        print("Responder agent sarting...")
+        responder_behaviour = self.ResponderResponseBehaviour(self.environment)
+        self.add_behaviour(responder_behaviour)
 
