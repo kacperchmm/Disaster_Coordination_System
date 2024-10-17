@@ -6,9 +6,12 @@ from spade.message import Message
 
 from agents.civilianAgent import CivilianAgent
 from agents.respondAgent import ResponderAgent
+from environment.environment import Environment
 
 import asyncio
 import spade
+import time
+import random
 
 async def main():
     # Create and initiali               ze the environment
@@ -24,5 +27,16 @@ async def main():
 
 
 if __name__ == "__main__":
+    env = Environment()
+    random_iteration = 7
+    random_rows = random.sample(range(0, 9), random_iteration)
+    random_columns = random.sample(range(0, 9), random_iteration)
+
+    for i in range(random_iteration):
+        env.display()
+        env.setTile(random_rows[i], random_columns[i], "emergency", "TEST")
+
+        time.sleep(1) 
+
     spade.run(main())
     
