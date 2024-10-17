@@ -6,39 +6,65 @@ from spade.message import Message
 
 import asyncio
 import spade
+import os
+import time
+import random
+
+from disaster import Disaster
 
 
 # Define the Environment class to represent the air traffic control environment
 class Environment:
     def __init__(self):
         # Initialize environment variables, e.g., aircraft positions, weather, runways, etc.
-        self.aircraft_positions = {}
-        self.weather_conditions = {}
-        self.runway_status = {}
+        self.size = 10
+        self.board = [[Disaster() for _ in range(self.size)] for _ in range(self.size)]
 
-    def update_aircraft_position(self, aircraft_id, position):
-        self.aircraft_positions[aircraft_id] = position
-        print(self.aircraft_positions)
+    def display(self):
+        # Display the board, printing '0' if emergency is None, otherwise the emergency value
+        os.system("clear")
+        for row in self.board:
+            print(" ".join(map(str, row)))
 
-    def update_weather(self, weather_data):
-        self.weather_conditions = weather_data
-        print(self.weather_conditions)
 
-    def update_runway_status(self, runway_id, status):
-        self.runway_status[runway_id] = status
-        print(self.runway_status)
+    def setTile(self, x_axis, y_axis, operation, value):
+        if operation == "emergency":
+            self.board[x_axis][y_axis].setEmergency(value)
 
-    def get_aircraft_position(self):
-        #
-        pass
+        elif operation == "food":
+            self.board[x_axis][y_axis].setFoodToProvide(value)
 
-    def get_weather_data(selfself):
-        #
-        pass
+        elif operation == "people":
+            self.board[x_axis][y_axis].setPeopleToRescue(value)
 
-    def get_runway_status(self):
-        #
-        pass
+        elif operation == "medicine":
+            self.board[x_axis][y_axis].setMedicineToProvide(value)
+
+        elif operation == "blockage":
+            self.board[x_axis][y_axis].setBlockageStatus(value)
+
+        elif operation == "communication":
+            self.board[x_axis][y_axis].setCommunication(value)
+
+    def getTile(self, x_axis, y_axis, operation):
+        if operation == "emergency":
+            return self.board[x_axis][y_axis].getEmergency()
+
+        elif operation == "food":
+            return self.board[x_axis][y_axis].getFoodToProvide()
+
+        elif operation == "people":
+            return self.board[x_axis][y_axis].getPeopleToRescue()
+
+        elif operation == "medicine":
+            return self.board[x_axis][y_axis].getMedicineToProvide()
+
+        elif operation == "blockage":
+            return self.board[x_axis][y_axis].getBlockageStatus()
+
+        elif operation == "communication":
+            return self.board[x_axis][y_axis].getCommunication()
+
 
 
 class AirTrafficControlAgent(Agent):
@@ -124,4 +150,17 @@ async def main():
 
 
 if __name__ == "__main__":
-    spade.run(main())
+    # spade.run(main())
+    env = Environment()
+
+    random_iteration = 7
+    random_rows = random.sample(range(0, 9), random_iteration)
+    random_columns = random.sample(range(0, 9), random_iteration)
+
+    for i in range(random_iteration):
+        env.display()
+        env.setTile(random_rows[i], random_columns[i], "emergency", "TEST")
+
+        time.sleep(1) 
+
+

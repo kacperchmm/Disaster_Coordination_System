@@ -13,6 +13,8 @@ Every disaster field should have a following properties:
 - medicine to provide,
 - blockage status - if there is a blockage, food and medicine can be provided, but people can't be rescued,
 - communication status - in case of no communication with certain field, priority of rescuing it should be the highest possible.
+- agent representing a civilian,
+- terrain difficulty.
 
 ## Agent Types
 
