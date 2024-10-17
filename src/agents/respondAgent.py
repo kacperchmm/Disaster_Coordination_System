@@ -27,14 +27,13 @@ class ResponderAgent(Agent):
             msg = await self.receive(timeout=10)  # Wait for incoming messages
             if msg:
                 print(f"Responder received message: {msg.body}")
-                
                 response = Message(to=msg.sender)  
                 response.set_metadata("performative", "inform")
                 response.body = "Acknowledging request. Help is on the way."
                 await self.send(response)
 
         async def setup(self):
-            print("Responder agent on job")
+            print("Responder agent sarting...")
             responder_behaviour = self.ResponderBehaviour()
             self.add_behaviour(responder_behaviour)
 

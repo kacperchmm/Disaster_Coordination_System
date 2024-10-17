@@ -11,7 +11,7 @@ class CivilianAgent(Agent):
             print("Sending help request to responder...")
             msg = Message(to="responder@localhost")  # Responder agent's JID
             msg.set_metadata("performative", "request")
-            msg.body = "Need rescue and medical aid at location X"
+            msg.body = "medicine,1,1"
             await self.send(msg)
             print("Help request sent.")
 
