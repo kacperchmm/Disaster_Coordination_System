@@ -23,7 +23,7 @@ class Disaster:
     # "communication": Bool
     #
 
-    async def setEmergency(self, env, value):
+    async def setDisaster(self, env, value):
         self.emergency = value["emergency_type"]
         self.food_to_provide = value["food"]
         self.people_to_rescue = value["people"]
@@ -41,6 +41,9 @@ class Disaster:
         self.medicine_to_provide = 0
         self.blockage_status = False
         self.communication_status = True
+
+    async def setEmergency(self, value):
+        self.emergency = value
 
     async def getEmergency(self):
         return self.emergency
@@ -84,4 +87,9 @@ class Disaster:
         self.communication_status = True
 
     def __repr__(self):
-        return '0' if self.emergency ==  "Safe" else "\033[31m#\033[0m"
+        if self.emergency == "Safe":
+            return '0'
+        elif self.emergency == "Base":
+            return '\033[32mB\033[0m'       # Green color for Base tile
+        else:
+            return "\033[31m#\033[0m"       # Red color for Disaster tile

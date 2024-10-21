@@ -1,14 +1,18 @@
 from .disaster import Disaster
 
+import random
 class Environment:
     def __init__(self):
         self.size = 10
         self.board = [[Disaster(x, y) for y in range(self.size)] for x in range(self.size)]
+        self.terrain_difficulty = [[random.randint(1, 9) for _ in range(self.size)] for _ in range(self.size)]
 
     def display(self):
         print("\nBoard status is following:")
-        for row in self.board:
-            print(" ".join(map(str, row)))
+        for i in range(self.size):
+            board_row = " ".join(map(str, self.board[i]))
+            terrain_row = " ".join(map(str, self.terrain_difficulty[i]))
+            print(f"{board_row}          {terrain_row}")
         print()
 
     async def setTile(self, value):
@@ -17,8 +21,10 @@ class Environment:
 
         if value["emergency_type"] == "Safe":
             await self.board[x][y].removeEmergency()
+        elif value["emergency_type"] == "Base":
+            await self.board[x][y].setEmergency(value["emergency_type"])
         else:
-            await self.board[x][y].setEmergency(self, value)
+            await self.board[x][y].setDisaster(self, value)
 
         self.display()
 
