@@ -32,10 +32,18 @@ async def main():
 
     await responder_agent.start(auto_register=True)
 
+    base_settings = {
+        "x_position": 4,
+        "y_position": 2,
+        "emergency_type": "Base",
+    }
+
+    await env.setTile(base_settings)
+
     emergency_settings = {
         "x_position": 1,
         "y_position": 1,
-        "emergency_type": "fire",
+        "emergency_type": "Fire",
         "food": 32904,
         "people": 92313,
         "medicine": 154,
