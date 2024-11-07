@@ -72,6 +72,10 @@ class ResponderAgent(Agent):
                 # TODO: Closing a civilian agent
                 #
 
+                msg = Message(to="civilian@localhost")
+                msg.set_metadata("performative", "request")
+                msg.body = f"Sending help"
+                await self.send(msg)
 
     async def setup(self):
         print("Responder agent sarting...")
