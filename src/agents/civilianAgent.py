@@ -1,8 +1,10 @@
-
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
+from common import parseMessage
+
 from spade import wait_until_finished
+from simulation import spinningCircle
 
 STATE_PEACE = "STATE_PEACE"
 STATE_ASK_FOR_HELP = "STATE_ASK_FOR_HELP"

@@ -1,8 +1,11 @@
-
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour
 from spade.message import Message
+from common import parseMessage
 
+from spade.behaviour import OneShotBehaviour
+from spade.behaviour import CyclicBehaviour
+
+from spade import wait_until_finished
 from simulation import spinningCircle
 
 def parseMessage(message):
@@ -53,7 +56,7 @@ class ResponderAgent(Agent):
                 print(f"Responder received message: {msg.body}")
                 emergency_need, x_axis, y_axis = parseMessage(msg.body)
 
-                print(f"Suplying {emergency_need} on tile [{x_axis}, {y_axis}]")
+                print(f"Dispatching {emergency_need} on tile [{x_axis}, {y_axis}]")
 
                 tile_changes = {
                     "x_position": x_axis,
