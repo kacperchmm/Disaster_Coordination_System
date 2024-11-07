@@ -1,8 +1,11 @@
-
 from spade.agent import Agent
-from spade.behaviour import OneShotBehaviour
 from spade.message import Message
+from common import parseMessage
+
+from spade.behaviour import OneShotBehaviour
+
 from spade import wait_until_finished
+from simulation import spinningCircle
 
 class CivilianAgent(Agent):
 
@@ -11,7 +14,7 @@ class CivilianAgent(Agent):
         self.x_position = x_axis
         self.y_position = y_axis
         self.environment = environment
-
+    
     class RequestBehaviour(OneShotBehaviour):
         async def run(self):
             print("Sending help request to responder...")

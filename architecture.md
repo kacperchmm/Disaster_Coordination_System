@@ -29,12 +29,14 @@ Role: These agents represent emergency response teams responsible for rescuing c
 Communication: Interact with civilians, respond to emergency and send status updates.
 Decision-making: Prioritize help based on urgency.
 
-Protocol: where, what
+Protocol: where, what (supplies)
 
 ### Supply Vehicle Agents
 Role: These agents manage the delivery of resources (food, water, medical supplies) from centralized depots to affected regions or shelters. They should optimize routes, taking into account road conditions, traffic, and time-sensitive needs in various locations.
 
-Communication: Communicate with the response agent, what and where should things be delivered. 
+Communication: Communicate with the response agent, what and where should things be delivered.
+
+Protocol: where, what (supplies)
 
 ### Shelter Agents
 Role: Shelter agents represent temporary shelters set up to house displaced civilians. They need to communicate with supply agents to request resources and with responder agents to coordinate the transportation of civilians to shelters.
@@ -45,7 +47,7 @@ Communication: Coordinate transportation of civilians to shelter with responder.
 Role: Represent people in emergency.
 Communication: Signalize to responder agents that they need help.
 
-Protocol: what, where
+Protocol: what (disaster), where
 
 ### Environment
 
@@ -70,3 +72,4 @@ Protocol: what, where
 
 ## IDEAS
 - Allocate free recources if necessary, e.g. supply vehicle agents could transport civilians.
+
