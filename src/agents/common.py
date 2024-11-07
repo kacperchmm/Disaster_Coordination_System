@@ -73,6 +73,12 @@ def get_neighbors(position, board):
             neighbors.append((nx, ny))
     return neighbors
 
+# Manhattan Distance Heuristic Function
+def heuristic(position, goal):
+    x1, y1 = position
+    x2, y2 = goal
+    return abs(x1 - x2) + abs(y1 - y2)
+
 
 """
 
@@ -83,6 +89,6 @@ def heuristic(x_pos,y_pos):
 
     # heuristic = terrain difficulty
     # board from env
-    # supply vehicle p
+    # supply vehicle pos
 
 """
