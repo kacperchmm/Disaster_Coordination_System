@@ -1,12 +1,14 @@
+from .common import parseMessage, a_star_search, heuristic
+
 from spade.agent import Agent
 from spade.message import Message
-from common import parseMessage, a_star_search, heuristic
 
 from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
 
 from spade import wait_until_finished
 from simulation import spinningCircle
+
 
 class SupplyVehicleAgent(Agent):
     def __init__(self, jid, password, environment):

@@ -1,6 +1,7 @@
+from .common import parseMessage
+
 from spade.agent import Agent
 from spade.message import Message
-from common import parseMessage
 
 from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
@@ -8,6 +9,10 @@ from spade.behaviour import CyclicBehaviour
 from spade import wait_until_finished
 from simulation import spinningCircle
 
+
+import heapq
+
+# Based on emergency type (string), priority queue
 
 """
 The attributes that can be set in a template are:
@@ -36,6 +41,7 @@ class ResponderAgent(Agent):
         def __init__(self, environment):
             super().__init__()
             self.environment = environment
+
 
         async def run(self):
             msg = await self.receive(timeout=10)  # Wait for incoming messages
