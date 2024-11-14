@@ -6,6 +6,7 @@ from spade.message import Message
 
 from agents.civilianAgent import CivilianAgent
 from agents.respondAgent import ResponderAgent
+from agents.disasterAgent import DisasterAgent
 from environment.environment import Environment
 
 import asyncio
@@ -29,8 +30,12 @@ async def main():
 
     # randomEmergencyGenerator(env)
     responder_agent = ResponderAgent("responder@localhost", "responder", env)
+    civilian_agent = CivilianAgent("civilian@localhost", "civilian", env)
+    disaster_agent = DisasterAgent("disaster@localhost", "disaster", env)
 
+    await civilian_agent.start(auto_register=True)
     await responder_agent.start(auto_register=True)
+    await disaster_agent.start(auto_register=True)
 
     base_settings = {
         "x_position": 4,
@@ -38,20 +43,20 @@ async def main():
         "emergency_type": "Base",
     }
 
-    await env.setTile(base_settings)
+    # await env.setTile(base_settings)
 
-    emergency_settings = {
-        "x_position": 1,
-        "y_position": 1,
-        "emergency_type": "Fire",
-        "food": 32904,
-        "people": 92313,
-        "medicine": 154,
-        "blockage": False,
-        "communication": True
-    }
+    # emergency_settings = {
+    #     "x_position": 1,
+    #     "y_position": 1,
+    #     "emergency_type": "Fire",
+    #     "food": 32904,
+    #     "people": 92313,
+    #     "medicine": 154,
+    #     "blockage": False,
+    #     "communication": True
+    # }
 
-    await env.setTile(emergency_settings)
+    # await env.setTile(emergency_settings)
 
 if __name__ == "__main__":
     spade.run(main())

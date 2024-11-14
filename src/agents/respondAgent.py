@@ -1,27 +1,12 @@
 from spade.agent import Agent
 from spade.message import Message
-from common import parseMessage
+from agents.common import parseMessage
 
 from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
 
 from spade import wait_until_finished
 from simulation import spinningCircle
-
-def parseMessage(message):
-    parts = message.split(',')
-
-    if len(parts) != 3:
-        raise ValueError("Wrong format of message!\n Expected: '<str>,<number>,<number>'")
-
-    string_value = parts[0]
-    try:
-        number1 = int(parts[1])
-        number2 = int(parts[2])
-    except ValueError:
-        raise ValueError("The second and third values must be valid integers.")
-
-    return string_value, number1, number2
 
 """
 The attributes that can be set in a template are:
@@ -53,10 +38,10 @@ class ResponderAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)  # Wait for incoming messages
             if msg:
-                print(f"Responder received message: {msg.body}")
+                print(f"Responder> Received message: {msg.body}")
                 emergency_need, x_axis, y_axis = parseMessage(msg.body)
 
-                print(f"Dispatching {emergency_need} on tile [{x_axis}, {y_axis}]")
+                print(f"Responder> Dispatching {emergency_need} on tile [{x_axis}, {y_axis}]")
 
                 tile_changes = {
                     "x_position": x_axis,
@@ -78,7 +63,7 @@ class ResponderAgent(Agent):
                 await self.send(msg)
 
     async def setup(self):
-        print("Responder agent sarting...")
+        print("Responder> Agent sarting...")
         responder_behaviour = self.ResponderResponseBehaviour(self.environment)
         self.add_behaviour(responder_behaviour)
 
