@@ -24,6 +24,19 @@ transportation of civilians to shelters.
 class ShelterAgent(Agent):
     def __init__(self, jid, password):
         super().__init__(jid, password)
+        self.inventory = {
+            "water": 100,  # Available units
+            "food": 50,
+            "medicine": 20,
+            "beds": 10,    # Available capacity
+            }
+
+        self.needs = {
+            "water": 0,  # Additional units needed
+            "food": 0,
+            "medicine": 0,
+            "beds": 0,
+            }
 
     
     class RequestResourceBehaviour(CyclicBehaviour):
@@ -60,12 +73,47 @@ class ShelterAgent(Agent):
             confirmation = await self.receive(timeout=10)
             if confirmation:
                 print(f"Transport coordination confirmed: {confirmation.body}")
+        
+    class InventoryCheckBehaviour(CyclicBehaviour):
+        async def run(self):
+            for item, available in self.agent.inventory.items():
+                if available < 10:  # Threshold
+                    self.agent.needs[item] = 10 - available
+            
+            if self.agent.needs:
+                request_msg = Message(to="supplyvehicle@localhost")
+                request_msg.set_metadata("ontology", "resource_request")
+                request_msg.set_metadata("performative", "request")
+                request_msg.body = str(self.agent.needs)  # Send needs as JSON
+                await self.send(request_msg)
+                print(f"Requested resources: {self.agent.needs}")
     
-    def update_shelter_status():
-        # number need transport
-        # resources
+    class ReceiveSupplyBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=10)
+            if msg and msg.get_metadata("ontology") == "resource_response":
+                delivered_resources = eval(msg.body)  # Assume body contains a dictionary
+                for item, quantity in delivered_resources.items():
+                    self.agent.inventory[item] += quantity
+                    self.agent.needs[item] = max(0, self.agent.needs.get(item, 0) - quantity)
+                print(f"Updated inventory: {self.agent.inventory}")
+
+    class ReportInventoryBehaviour(CyclicBehaviour):
+        async def run(self):
+            print(f"Current Inventory for {self.agent.name}: {self.agent.inventory}")
+            print(f"Current Needs for {self.agent.name}: {self.agent.needs}")
+
+    def update_shelter_status(): 
         pass
 
     
     async def setup(self):
-        pass
+        inventory_check_behaviour = self.InventoryCheckBehaviour()
+        request_supply_behaviour = self.RequestResourceBehaviour()
+        recieve_supply_behaviour = self.ReceiveSupplyBehaviour()
+        report_inventory_behaviour = self.ReportInventoryBehaviour()
+        
+        self.add_behaviour(inventory_check_behaviour())
+        self.add_behaviour(request_supply_behaviour())
+        self.add_behaviour(recieve_supply_behaviour())
+        self.add_behaviour(report_inventory_behaviour())

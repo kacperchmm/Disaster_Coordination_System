@@ -60,6 +60,11 @@ class SupplyVehicleAgent(Agent):
                 # spinningCircle.spinner(5)
 
 
+# cost = path
+# sv 1, cost 3
+# sv 2, cost 2
+# sv 3, cost,6
 
+# shelter 1 gives bives bid to sv 2
 
 
