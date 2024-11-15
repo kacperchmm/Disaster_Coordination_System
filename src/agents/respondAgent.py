@@ -1,4 +1,4 @@
-from .common import parseMessage
+from .utils import parseMessage
 
 from spade.agent import Agent
 from spade.message import Message

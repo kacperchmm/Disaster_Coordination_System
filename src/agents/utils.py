@@ -5,6 +5,7 @@ import heapq
 """
 emergency_need = what supplies, food, medicine etc.
 
+https://moodle2425.up.pt/pluginfile.php/115075/mod_resource/content/9/ISIA_3%20-%20Multi-Agent%20Systems.pdf
 """
 
 def parseMessage(message):

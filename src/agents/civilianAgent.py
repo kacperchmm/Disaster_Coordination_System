@@ -1,6 +1,6 @@
 from spade.agent import Agent
 from spade.message import Message
-from common import parseMessage
+from agents.utils import parseMessage
 
 from spade.behaviour import OneShotBehaviour
 

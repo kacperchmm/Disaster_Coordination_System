@@ -1,4 +1,4 @@
-from .common import parseMessage, a_star_search, heuristic
+from .utils import parseMessage, a_star_search, heuristic
 
 from spade.agent import Agent
 from spade.message import Message
