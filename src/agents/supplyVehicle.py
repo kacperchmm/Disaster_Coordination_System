@@ -1,17 +1,19 @@
 from .utils import parseMessage, a_star_search, heuristic
 
+from spade import wait_until_finished
+from spade.behaviour import CyclicBehaviour
 from spade.agent import Agent
 from spade.message import Message
 
-from spade.behaviour import CyclicBehaviour
+from agents.common import parseMessage
 
 import heapq
 
-
 class SupplyVehicleAgent(Agent):
-    def __init__(self, jid, password, environment):
+    def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.environment = environment  # Shared environment reference
+        self.manager = manager # Manager of created agent hosts
         self.x_pos = 0  # Current X position of the vehicle
         self.y_pos = 0  # Current Y position of the vehicle
         self.priority_queue = []  # Priority queue for tasks (min-heap)

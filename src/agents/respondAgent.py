@@ -1,20 +1,23 @@
 from .utils import parseMessage
 
+from spade import wait_until_finished
 from spade.agent import Agent
 from spade.message import Message
-
 from spade.behaviour import CyclicBehaviour
 
+from shared.spinningCircle import spinner
+from agents.common import parseMessage
+
+import asyncio
 import heapq
 
-# Based on emergency type (string), priority queue
-
-
 class ResponderAgent(Agent):
-    def __init__(self, jid, password, environment):
+    def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.environment = environment  # Shared environment reference
         self.priority_queue = []  # Store tasks prioritized by urgency
+        self.environment = environment
+        self.manager = manager
 
     async def send_priority_queue(self):
         if self.priority_queue:
@@ -92,3 +95,4 @@ class ResponderAgent(Agent):
         # Add the behavior to process and respond to tasks
         responder_response = self.ResponderResponseBehaviour(self.environment)
         self.add_behaviour(responder_response)
+
