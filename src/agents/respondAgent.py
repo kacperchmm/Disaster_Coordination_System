@@ -6,7 +6,9 @@ from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
 
 from spade import wait_until_finished
-from simulation import spinningCircle
+from shared.spinningCircle import spinner
+
+import asyncio
 
 """
 The attributes that can be set in a template are:
@@ -26,9 +28,10 @@ in the template must be equal in the message for this to match.
 """
 
 class ResponderAgent(Agent):
-    def __init__(self, jid, password, environment):
+    def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.environment = environment
+        self.manager = manager
 
     class ResponderResponseBehaviour(CyclicBehaviour):
         def __init__(self, environment):
@@ -36,7 +39,8 @@ class ResponderAgent(Agent):
             self.environment = environment
 
         async def run(self):
-            msg = await self.receive(timeout=10)  # Wait for incoming messages
+            msg = await self.receive(timeout=10)
+            print("Responder> Waiting for message")
             if msg:
                 print(f"Responder> Received message: {msg.body}")
                 emergency_need, x_axis, y_axis = parseMessage(msg.body)
@@ -49,18 +53,18 @@ class ResponderAgent(Agent):
                     "emergency_type": "Safe"
                 }
 
-                spinningCircle.spinner(5)
+                # spinner(5)
+
+                await asyncio.sleep(10)
 
                 await self.environment.setTile(tile_changes)
 
-                #
-                # TODO: Closing a civilian agent
-                #
+                response = Message(to=str(msg.sender))
+                response.set_metadata("performative", "request")
+                response.body = f"Sending help"
+                await self.send(response)
 
-                msg = Message(to="civilian@localhost")
-                msg.set_metadata("performative", "request")
-                msg.body = f"Sending help"
-                await self.send(msg)
+                await self.agent.manager.removeAgentInstance(str(self.agent.  jid))
 
     async def setup(self):
         print("Responder> Agent sarting...")
