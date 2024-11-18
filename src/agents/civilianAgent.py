@@ -1,6 +1,9 @@
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
+from agents.utils import parseMessage
+
+from spade.behaviour import OneShotBehaviour
 
 from spade import wait_until_finished
 from agents.common import parseMessage

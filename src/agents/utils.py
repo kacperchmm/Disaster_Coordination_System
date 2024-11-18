@@ -1,10 +1,12 @@
 from spade.message import Message
 import heapq
+import random
 
 
 """
 emergency_need = what supplies, food, medicine etc.
 
+https://moodle2425.up.pt/pluginfile.php/115075/mod_resource/content/9/ISIA_3%20-%20Multi-Agent%20Systems.pdf
 """
 
 def parseMessage(message):
@@ -22,9 +24,29 @@ def parseMessage(message):
 
     return string_value, number1, number2
 
+def generate_priority():
+    return random.randint(1, 10)
+
+def generate_needs():
+    return random.choice(["medical", "food", "shelter", "rescue"])
+
+def fill_resource_inventory(inventory, resource, amount):
+    for resource, amount in inventory.items():
+        inventory[resource] += amount
+        inventory[resource] = max(0, inventory(resource, 0) - amount)
+        print(f"{resource} added. Total: {inventory[resource]}")
+
+def update_resource_inventory(resource, inventory, amount):
+    if resource in inventory and inventory[resource] >= amount:
+        inventory[resource] -= amount
+        print(f"{resource} consumed. Remaining: {inventory[resource]}")
+        return True
+    else:
+        print(f"Not enough {resource} or resource does not exist. Task cannot proceed.")
+        return False
+
 
 def a_star_search(h, start, goal, board):
-    # heap for priority queue
     open_list = []
     heapq.heappush(open_list, (0, start))
     
@@ -73,6 +95,12 @@ def get_neighbors(position, board):
             neighbors.append((nx, ny))
     return neighbors
 
+# Manhattan Distance Heuristic Function
+def heuristic(position, goal):
+    x1, y1 = position
+    x2, y2 = goal
+    return abs(x1 - x2) + abs(y1 - y2)
+
 
 """
 
@@ -83,6 +111,6 @@ def heuristic(x_pos,y_pos):
 
     # heuristic = terrain difficulty
     # board from env
-    # supply vehicle p
+    # supply vehicle pos
 
 """
