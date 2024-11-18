@@ -1,5 +1,6 @@
 from spade.message import Message
 import heapq
+import random
 
 
 """
@@ -23,9 +24,29 @@ def parseMessage(message):
 
     return string_value, number1, number2
 
+def generate_priority():
+    return random.randint(1, 10)
+
+def generate_needs():
+    return random.choice(["medical", "food", "shelter", "rescue"])
+
+def fill_resource_inventory(inventory, resource, amount):
+    for resource, amount in inventory.items():
+        inventory[resource] += amount
+        inventory[resource] = max(0, inventory(resource, 0) - amount)
+        print(f"{resource} added. Total: {inventory[resource]}")
+
+def update_resource_inventory(resource, inventory, amount):
+    if resource in inventory and inventory[resource] >= amount:
+        inventory[resource] -= amount
+        print(f"{resource} consumed. Remaining: {inventory[resource]}")
+        return True
+    else:
+        print(f"Not enough {resource} or resource does not exist. Task cannot proceed.")
+        return False
+
 
 def a_star_search(h, start, goal, board):
-    # heap for priority queue
     open_list = []
     heapq.heappush(open_list, (0, start))
     

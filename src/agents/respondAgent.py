@@ -3,78 +3,92 @@ from .utils import parseMessage
 from spade.agent import Agent
 from spade.message import Message
 
-from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
-
-from spade import wait_until_finished
-from simulation import spinningCircle
-
 
 import heapq
 
 # Based on emergency type (string), priority queue
 
-"""
-The attributes that can be set in a template are:
-
-to: the jid string of the receiver of the message.
-sender the jid string of the sender of the message.
-body: the body of the message.
-thread: the thread id of the conversation.
-metadata: a (key, value) dictionary of strings to define metadata of the message. This is useful, 
-for example, to include FIPA attributes like ontology, performative, language, etc.
-
-Templates is the method used by SPADE to dispatch received messages to the behaviour that is waiting 
-for that message. When adding a behaviour you can set a template for that behaviour, 
-which allows the agent to deliver a message received by the agent to that registered behaviour. 
-A Template instance has the same attributes of a Message and all the attributes defined 
-in the template must be equal in the message for this to match.
-"""
 
 class ResponderAgent(Agent):
     def __init__(self, jid, password, environment):
         super().__init__(jid, password)
-        self.environment = environment
+        self.environment = environment  # Shared environment reference
+        self.priority_queue = []  # Store tasks prioritized by urgency
 
+    async def send_priority_queue(self):
+        if self.priority_queue:
+            sorted_queue = sorted(self.priority_queue, key=lambda x: x['priority'])
+            msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
+            msg.set_metadata("ontology", "priority_queue")
+            msg.body = str(sorted_queue)
+            await self.send(msg)
+            print(f"Sent sorted priority queue: {sorted_queue}")
+
+    class ReceiveCivilianRequests(CyclicBehaviour):
+        async def run(self):
+            # Wait for a message from civilian agents
+            msg = await self.receive(timeout=10)
+            if msg:
+                # Parse the incoming message
+                try:
+                    data = parseMessage(msg.body)
+                    print(f"Responder received a request: {data}")
+                    
+                    # Add the request to the priority queue
+                    self.agent.priority_queue.append((data["priority"], data))
+                    self.agent.priority_queue.sort(reverse=True)  # Sort by priority
+                    
+                except Exception as exc:
+                    print(f"Error parsing message: {exc}")
 
     class ResponderResponseBehaviour(CyclicBehaviour):
         def __init__(self, environment):
             super().__init__()
             self.environment = environment
 
-
         async def run(self):
-            msg = await self.receive(timeout=10)  # Wait for incoming messages
-            
-            if msg:
-                print(f"Responder received message: {msg.body}")
-                emergency_need, x_axis, y_axis = parseMessage(msg.body)
-                print(f"Dispatching {emergency_need} to coordinates [{x_axis}, {y_axis}]")
+            # Process tasks from the priority queue
+            if self.agent.priority_queue:
 
-                # Prepare message for SupplyVehicleAgent
-                
-                supply_msg = Message(to="supplyvehicle@localhost")  # JID
-                supply_msg.set_metadata("ontology", "emergency_response")
-                supply_msg.set_metadata("performative", "inform") # slides from lectures
-                supply_msg.set_metadata("language", "English")
-                supply_msg.body = f"{emergency_need},{x_axis},{y_axis}"
+                _, task = self.agent.priority_queue.pop(0)
+                print(f"Responder handling task: {task}")
 
-                # spinningCircle.spinner(5)
+                # Extract task details
+                emergency_need = task.get("emergency_need", "unknown")
+                x_axis = task.get("x_position", 0)
+                y_axis = task.get("y_position", 0)
 
-                tile_changes = { "x_position": x_axis,
-                                "y_position": y_axis,
-                                "emergency_type": "Safe"
-                                }
+                msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
+                msg.set_metadata("ontology", "priority_queue")
+                msg.body = str(self.agent.priority_queue)
+                await self.send(msg)
+                print(f"Sent sorted priority queue: {self.agent.priority_queue}")
+
+                # Update the environment (mark the task location as safe)
+                tile_changes = {
+                    "x_position": x_axis,
+                    "y_position": y_axis,
+                    "emergency_type": "Safe"
+                }
 
                 await self.environment.setTile(tile_changes)
+                print(f"Updated environment tile: {tile_changes}")
 
-                #
-                # TODO: Closing a civilian agent
-                #
-
+    class SendPriorityQueueBehaviour(CyclicBehaviour):
+        async def run(self):
+            await self.agent.send_priority_queue()
 
     async def setup(self):
-        print("Responder agent sarting...")
-        responder_behaviour = self.ResponderResponseBehaviour(self.environment)
-        self.add_behaviour(responder_behaviour)
+        print("Responder agent starting...")
 
+        # Add the behavior to receive civilian requests
+        receive_civilian_requests = self.ReceiveCivilianRequests()
+        self.add_behaviour(receive_civilian_requests)
+
+        b = self.SendPriorityQueueBehaviour()
+        self.add_behaviour(b)
+        
+        # Add the behavior to process and respond to tasks
+        responder_response = self.ResponderResponseBehaviour(self.environment)
+        self.add_behaviour(responder_response)

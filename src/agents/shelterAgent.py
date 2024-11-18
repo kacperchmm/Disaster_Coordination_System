@@ -1,6 +1,6 @@
 from spade.agent import Agent
 from spade.message import Message
-from .utils import parseMessage
+from .utils import parseMessage, fill_resource_inventory, update_resource_inventory
 
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour
 
@@ -17,7 +17,7 @@ transportation of civilians to shelters.
 """
 
 # request resource FROM supply
-# request coordinates FROM responder
+# request coordinates FROM responder (the queue)
 # supply bidding, lowest cost (distance)
 # fix msg.body
 
@@ -94,17 +94,13 @@ class ShelterAgent(Agent):
             if msg and msg.get_metadata("ontology") == "resource_response":
                 delivered_resources = eval(msg.body)  # Assume body contains a dictionary
                 for item, quantity in delivered_resources.items():
-                    self.agent.inventory[item] += quantity
-                    self.agent.needs[item] = max(0, self.agent.needs.get(item, 0) - quantity)
-                print(f"Updated inventory: {self.agent.inventory}")
+                    fill_resource_inventory(self.agent.inventory, item, quantity)
+
 
     class ReportInventoryBehaviour(CyclicBehaviour):
         async def run(self):
             print(f"Current Inventory for {self.agent.name}: {self.agent.inventory}")
             print(f"Current Needs for {self.agent.name}: {self.agent.needs}")
-
-    def update_shelter_status(): 
-        pass
 
     
     async def setup(self):
