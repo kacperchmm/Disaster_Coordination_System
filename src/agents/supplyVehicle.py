@@ -1,19 +1,19 @@
 from spade.agent import Agent
 from spade.message import Message
-from common import parseMessage
+from agents.common import parseMessage
 
 from spade.behaviour import OneShotBehaviour
 from spade.behaviour import CyclicBehaviour
 
 from spade import wait_until_finished
-from simulation import spinningCircle
 
 class SupplyVehicleAgent(Agent):
-    def __init__(self, jid, password, environment):
+    def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.environment = environment
         self.x_pos = 0
         self.y_pos = 0
+        self.manager = manager
 
     def get_pos(self):
         pass

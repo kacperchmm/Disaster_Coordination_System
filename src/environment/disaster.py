@@ -31,8 +31,6 @@ class Disaster:
         self.blockage_status = value["blockage"]
         self.communication_status = value["communication"]
 
-        civilian_agent = CivilianAgent("civilian@localhost", "civilian", self.x_position, self.y_position, env)
-        await civilian_agent.start(auto_register=True)
 
     async def removeEmergency(self):
         self.emergency = "Safe"

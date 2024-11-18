@@ -1,7 +1,7 @@
 from .disaster import Disaster
-
+from shared.singletonMeta import SingletonMeta
 import random
-class Environment:
+class Environment(metaclass=SingletonMeta):
     def __init__(self):
         self.size = 10
         self.board = [[Disaster(x, y) for y in range(self.size)] for x in range(self.size)]

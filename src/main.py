@@ -6,6 +6,8 @@ from spade.message import Message
 
 from agents.civilianAgent import CivilianAgent
 from agents.respondAgent import ResponderAgent
+from agents.disasterAgent import DisasterAgent
+from agents.agentManager import AgentManager
 from environment.environment import Environment
 
 import asyncio
@@ -13,24 +15,28 @@ import spade
 import time
 import random
 
-def randomEmergencyGenerator(env):
-    random_iteration = 7
-    random_rows = random.sample(range(0, 9), random_iteration)
-    random_columns = random.sample(range(0, 9), random_iteration)
+async def initCivilianHosts(env, manager):
+    civilian_agent_first = CivilianAgent("civilian0@localhost", "civilian", env, manager)
+    civilian_agent_second = CivilianAgent("civilian1@localhost", "civilian", env, manager)
+    civilian_agent_third = CivilianAgent("civilian2@localhost", "civilian", env, manager)
+    civilian_agent_forth = CivilianAgent("civilian3@localhost", "civilian", env, manager)
+    civilian_agent_fifth = CivilianAgent("civilian4@localhost", "civilian", env, manager)
 
-    for i in range(random_iteration):
-        env.display()
-        env.setTile(random_rows[i], random_columns[i], "emergency", "TEST")
-
-        time.sleep(1) 
+    await civilian_agent_first.start(auto_register=True)
+    await civilian_agent_second.start(auto_register=True)
+    await civilian_agent_third.start(auto_register=True)
+    await civilian_agent_forth.start(auto_register=True)
+    await civilian_agent_fifth.start(auto_register=True)
 
 async def main():
     env = Environment()
+    manager = AgentManager(env)
 
-    # randomEmergencyGenerator(env)
-    responder_agent = ResponderAgent("responder@localhost", "responder", env)
+    await initCivilianHosts(env, manager)
 
-    await responder_agent.start(auto_register=True)
+    disaster_agent = DisasterAgent("disaster@localhost", "disaster", env, manager)
+
+    await disaster_agent.start(auto_register=True)
 
     base_settings = {
         "x_position": 4,
@@ -38,20 +44,20 @@ async def main():
         "emergency_type": "Base",
     }
 
-    await env.setTile(base_settings)
+    # await env.setTile(base_settings)
 
-    emergency_settings = {
-        "x_position": 1,
-        "y_position": 1,
-        "emergency_type": "Fire",
-        "food": 32904,
-        "people": 92313,
-        "medicine": 154,
-        "blockage": False,
-        "communication": True
-    }
+    # emergency_settings = {
+    #     "x_position": 1,
+    #     "y_position": 1,
+    #     "emergency_type": "Fire",
+    #     "food": 32904,
+    #     "people": 92313,
+    #     "medicine": 154,
+    #     "blockage": False,
+    #     "communication": True
+    # }
 
-    await env.setTile(emergency_settings)
+    # await env.setTile(emergency_settings)
 
 if __name__ == "__main__":
     spade.run(main())
