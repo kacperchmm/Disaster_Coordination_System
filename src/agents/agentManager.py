@@ -57,7 +57,7 @@ class AgentManager(metaclass=SingletonMeta):
         for agent_prefix, agent_class in agent_mapping.items():
             if agent_name.startswith(agent_prefix):
                 if agent_class:
-                    print(f"key = {agent_name}, agent = {agent_prefix}")
+                    print(f"Manager> key = {agent_name}, agent = {agent_prefix}")
                     return agent_class(agent_name, agent_prefix, self.env, self)
                 else:
                     print(f"CORE> Agent type '{agent_name}' is not implemented.")

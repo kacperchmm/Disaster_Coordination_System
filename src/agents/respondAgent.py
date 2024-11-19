@@ -60,36 +60,28 @@ class StatePrioritizeRequests(State):
 
 class StateSendPriorityQueue(State):
     async def run(self):
-        print("Responder> Sending priority queue...")
-        if self.agent.priority_queue:
+        print("Responder> Sending priority queue to supply vehicles...")
 
-            #
-            # Get a length of needs list, and send it in format eg. "init,{number_of_messages},0"
-            #
-            # Create a list of string in our message format <help,x_pos,y_pos>
-            # send them one by one to supply,
-            #
+        vehicle_host = await self.agent.manager.getFirstAvailableHost("vehicle")
 
-            sorted_queue = sorted(self.agent.priority_queue, key=lambda x: x[0])
-            print(f"Responder> sorted queye{str(sorted_queue)}")
+        # Send the number of messages first
+        num_messages = len(self.agent.civilian_requests)
+        init_msg = Message(to=vehicle_host)  # Replace with actual JID
+        init_msg.set_metadata("ontology", "init")
+        init_msg.body = f"init,{num_messages},0"
+        await self.send(init_msg)
+        print(f"Responder> Sent init message: {init_msg.body}")
 
-            vehicle_host = await self.agent.manager.getFirstAvailableHost("vehicle")
-
-            print(f"Responder> Connected to {vehicle_host}")
-
-            _, task = sorted_queue.pop(0)
-
-            task_str = ','.join(map(str, task))
-
-            msg = Message(to=str(vehicle_host)) 
+        # Create and send the prioritized messages one by one
+        for request in self.agent.civilian_requests:
+            print(f"DEBUG> Responder request is {request}")
+            help_msg = f"help,{request[1]},{request[2]}"
+            msg = Message(to=vehicle_host)  # Replace with actual JID
             msg.set_metadata("ontology", "priority_queue")
-            msg.body = task_str
+            msg.body = help_msg
             await self.send(msg)
-            print("Receiver> Message sent do vehicle")
-        else:
-            print(f"Responder> queue empty")
-        
-        # After sending, transition to the receive civilian request state again
+            print(f"Responder> Sent prioritized request: {msg.body}")
+
         self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
 
 class ResponderAgent(Agent):

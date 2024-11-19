@@ -55,8 +55,9 @@ class DisasterAgent(Agent):
             except Exception as e:
                 print(f"ERROR> Could not create disaster or send message: {e}")
                 print("Disaster> Retrying in the next cycle...")
+                await asyncio.sleep(20)
 
-            delay = random.uniform(1,10)
+            delay = random.uniform(1,6)
             await asyncio.sleep(delay)
 
     async def setup(self):
