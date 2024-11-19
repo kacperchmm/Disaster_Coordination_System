@@ -1,13 +1,13 @@
-from .utils import parseMessage, a_star_search, heuristic
-
 from spade import wait_until_finished
 from spade.behaviour import CyclicBehaviour
 from spade.agent import Agent
 from spade.message import Message
 
-from agents.common import parseMessage
+from shared.utils import a_star_search, heuristic
 
 import heapq
+import asyncio
+import json
 
 class SupplyVehicleAgent(Agent):
     def __init__(self, jid, password, environment, manager):
@@ -61,7 +61,7 @@ class SupplyVehicleAgent(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg and msg.get_metadata("ontology") == "priority_queue":
-                self.agent.priority_queue = eval(msg.body)  # Assume body contains a list
+                self.agent.priority_queue = json.loads(msg.body)
                 print(f"Received sorted priority queue: {self.agent.priority_queue}")
                 self.agent.prioritize_tasks()
 
@@ -83,10 +83,19 @@ class SupplyVehicleAgent(Agent):
                 if path:
                     print(f"Path found: {path}")
                     for step in path:
+                        moved_from = {
+                            "emergency_type": "Safe",
+                            "x_position": self.agent.x_pos,
+                            "y_position": self.agent.y_pos
+                        }
                         self.agent.x_pos, self.agent.y_pos = step
                         print(f"Moving to position: {step}")
                         # Update environment
-                        await self.agent.environment.update_position(self.agent.x_pos, self.agent.y_pos)
+                        await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos)
+
+                        await self.agent.environment.setTile(moved_from)
+
+                        await asyncio.sleep(2)
 
                 # Deliver supplies at the destination
                 self.agent.deliver_resources(task)
@@ -99,6 +108,10 @@ class SupplyVehicleAgent(Agent):
                 print(f"Supply delivered to tile: {x_axis}, {y_axis}")
 
     async def setup(self):
+        print(f"Vehicle> Set up with {self.jid}")
+
+        await self.environment.updatePositionVehicle(self.x_pos, self.y_pos)
+
         receive_behaviour = self.ReceivePriorityQueueBehaviour()
         self.add_behaviour(receive_behaviour)
 

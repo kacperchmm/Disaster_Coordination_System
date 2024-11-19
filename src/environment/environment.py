@@ -21,8 +21,9 @@ class Environment(metaclass=SingletonMeta):
 
         if value["emergency_type"] == "Safe":
             await self.board[x][y].removeEmergency()
-        elif value["emergency_type"] == "Base":
+        elif value["emergency_type"] == "Base" or value["emergency_type"] == "Vehicle":
             await self.board[x][y].setEmergency(value["emergency_type"])
+
         else:
             await self.board[x][y].setDisaster(self, value)
 
@@ -47,3 +48,6 @@ class Environment(metaclass=SingletonMeta):
 
         elif operation == "communication":
             return self.board[x_axis][y_axis].getCommunication()
+
+    async def updatePositionVehicle(self, x_axis, y_axis):
+        self.board[x_axis, y_axis].emergency = "Vehicle"
