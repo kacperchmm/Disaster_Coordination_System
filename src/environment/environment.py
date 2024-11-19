@@ -1,6 +1,7 @@
 from .disaster import Disaster
 from shared.singletonMeta import SingletonMeta
 import random
+
 class Environment(metaclass=SingletonMeta):
     def __init__(self):
         self.size = 10

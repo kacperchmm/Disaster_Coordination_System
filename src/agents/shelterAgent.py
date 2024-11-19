@@ -1,8 +1,10 @@
 from spade.agent import Agent
 from spade.message import Message
-from ..shared.utils import parseMessage, fill_resource_inventory, update_resource_inventory
-
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour
+
+from ..shared.utils import parseMessage, fill_resource_inventory, update_resource_inventory
+from ..shared.logger import logging
+
 
 """
 They need to communicate with supply agents to request 
@@ -35,7 +37,7 @@ class ShelterAgent(Agent):
     
     class RequestResourceBehaviour(CyclicBehaviour):
         async def run(self):
-            print("Sending request to Supply Agent...")
+            logging.info("Sending request to Supply Agent...")
             supply_msg = Message(to="supplyagent@localhost")
             supply_msg.set_metadata("ontology", "resource_request")
             supply_msg.set_metadata("performative", "request")
@@ -43,12 +45,12 @@ class ShelterAgent(Agent):
             supply_msg.body = ""  # Adjust with specific needs
             await self.send(supply_msg)
 
-            print("Resource request sent to Supply Agent.")
+            logging.info("Resource request sent to Supply Agent.")
 
             # Wait for a response
             response = await self.receive(timeout=10)
             if response:
-                print(f"Received resources response: {response.body}")
+                logging.info(f"Received resources response: {response.body}")
                 # Process the response or update inventory as needed
 
     class CoordinateTransportBehaviour(CyclicBehaviour):
@@ -61,12 +63,12 @@ class ShelterAgent(Agent):
             responder_msg.body = "" 
 
             await self.send(responder_msg)
-            print("Transport request sent to Responder Agent.")
+            logging.info("Transport request sent to Responder Agent.")
 
             # Wait for an update or confirmation from responder agent
             confirmation = await self.receive(timeout=10)
             if confirmation:
-                print(f"Transport coordination confirmed: {confirmation.body}")
+                logging.info(f"Transport coordination confirmed: {confirmation.body}")
         
     class InventoryCheckBehaviour(CyclicBehaviour):
         async def run(self):
@@ -80,7 +82,7 @@ class ShelterAgent(Agent):
                 request_msg.set_metadata("performative", "request")
                 request_msg.body = str(self.agent.needs)  # Send needs as JSON
                 await self.send(request_msg)
-                print(f"Requested resources: {self.agent.needs}")
+                logging.info(f"Requested resources: {self.agent.needs}")
     
     class ReceiveSupplyBehaviour(CyclicBehaviour):
         async def run(self):
@@ -93,8 +95,8 @@ class ShelterAgent(Agent):
 
     class ReportInventoryBehaviour(CyclicBehaviour):
         async def run(self):
-            print(f"Current Inventory for {self.agent.name}: {self.agent.inventory}")
-            print(f"Current Needs for {self.agent.name}: {self.agent.needs}")
+            logging.info(f"Current Inventory for {self.agent.name}: {self.agent.inventory}")
+            logging.info(f"Current Needs for {self.agent.name}: {self.agent.needs}")
 
     
     async def setup(self):

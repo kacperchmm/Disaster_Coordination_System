@@ -2,6 +2,7 @@ from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
 
+from shared.logger import logging
 from shared.utils import parseMessage, generate_needs
 
 STATE_PEACE = "STATE_PEACE"
@@ -12,15 +13,15 @@ STATE_GOODBYE= "STATE_GOODBYE"
 
 class CivilianBehaviour(FSMBehaviour):
     async def on_start(self):
-        print(f"Civilian> Starting at initial state {self.current_state}")
+        logging.info(f"Civilian> Starting at initial state {self.current_state}")
 
     async def on_end(self):
-        print(f"Civilian> finished at state {self.current_state}")
+        logging.info(f"Civilian> finished at state {self.current_state}")
         # await self.agent.stop()
 
 class StatePeace(State):
     async def run(self):
-        print("Civilian> Civilian in state peace :)")
+        logging.info("Civilian> Civilian in state peace :)")
 
         msg = await self.receive(timeout=10)
 
@@ -29,13 +30,13 @@ class StatePeace(State):
             if type == "disaster":
                 self.agent.x_position = x_pos
                 self.agent.y_position = y_pos
-                print(f"Civilian> Help needed at [{x_pos}, {y_pos}]")
+                logging.info(f"Civilian> Help needed at [{x_pos}, {y_pos}]")
                 self.set_next_state(STATE_ASK_FOR_HELP)
             else:
-                print("No disaster detected, staying in STATE_PEACE.")
+                logging.info("No disaster detected, staying in STATE_PEACE.")
                 self.set_next_state(STATE_PEACE)
         else:
-            print("Civilian> Waiting for message.")
+            logging.info("Civilian> Waiting for message.")
             self.set_next_state(STATE_PEACE)
 
 #
@@ -46,7 +47,7 @@ class StatePeace(State):
 
 class StateAskForHelp(State):
     async def run(self):
-        print("Civilian> Asking for help")
+        logging.info("Civilian> Asking for help")
         x_position = self.agent.x_position
         y_position = self.agent.y_position
 
@@ -56,22 +57,22 @@ class StateAskForHelp(State):
         msg.set_metadata("performative", "request")
         msg.body = f"{generate_needs()},{x_position},{y_position}"
         await self.send(msg)
-        print("Civilian> Help request sent.")
+        logging.info("Civilian> Help request sent.")
         self.set_next_state(STATE_WAIT_FOR_HELP)
 
 
 class StateWaitForHelp(State):
     async def run(self):
-        print("Civilian> Waiting for help")
+        logging.info("Civilian> Waiting for help")
         msg = await self.receive(timeout=10)
         if msg:
-            print("Civilian> Recieved message = " + msg.body)
+            logging.info("Civilian> Recieved message = " + msg.body)
             self.set_next_state(STATE_PEACE)
 
 
 class StateGoodBye(State):
     async def run(self):
-        print("Civilian> recieved help.")
+        logging.info("Civilian> recieved help.")
         await self.agent.manager.removeAgentInstance(str(self.agent.jid))
 
 

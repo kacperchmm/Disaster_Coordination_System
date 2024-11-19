@@ -3,6 +3,7 @@ from spade.behaviour import CyclicBehaviour, FSMBehaviour, State
 from spade.agent import Agent
 from spade.message import Message
 
+from shared.logger import logging
 from shared.utils import a_star_search, heuristic, parseMessage
 
 import heapq
@@ -17,13 +18,13 @@ STATE_PEACE= "STATE_PEACE"
 
 class StateIdle(State):
     async def run(self):
-        print("Vehicle> In idle state.")
+        logging.info("Vehicle> In idle state.")
         self.set_next_state(STATE_RECEIVE_TASKS)
 
 
 class StateReceiveTasks(State):
     async def run(self):
-        print("Vehicle> Checking for tasks.")
+        logging.info("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "init":
             received_msg = parseMessage(msg.body)
@@ -34,23 +35,23 @@ class StateReceiveTasks(State):
                 if msg:
                     task = parseMessage(msg.body)
                     self.agent.priority_queue.append(task)
-                    print(f"Vehicle> Recieved message {task} :)")
+                    logging.info(f"Vehicle> Recieved message {task} :)")
                 # else:
                 #     print("Vehicle> No tasks received.")
                 #     self.set_next_state(STATE_IDLE)
                 #     return
 
-            print(f"Vehicle> Received {self.agent.priority_queue}")
+            logging.info(f"Vehicle> Received {self.agent.priority_queue}")
             self.set_next_state(STATE_NAVIGATE)
         else:
             if msg:
-                print(f"Vehicle> Received wrong message {msg.body}")
-            print("Vehicle> No tasks received, staying idle.")
+                logging.info(f"Vehicle> Received wrong message {msg.body}")
+            logging.info("Vehicle> No tasks received, staying idle.")
             self.set_next_state(STATE_IDLE)
 
 class StateNavigate(State):
     async def run(self):
-        print("Vehicle> Navigating to task location.")
+        logging.info("Vehicle> Navigating to task location.")
         if self.agent.priority_queue:
             task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue[0]  # Peek at the next task
@@ -61,29 +62,29 @@ class StateNavigate(State):
             path = a_star_search(heuristic, start_position, destination, self.agent.environment.board)
             if path:
                 for step in path:
-                    print(f"Vehicle> Moving to position: {step}")
+                    logging.info(f"Vehicle> Moving to position: {step}")
 
                     await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False)
                     self.agent.x_pos, self.agent.y_pos = step
 
                     await asyncio.sleep(1)
-                print("Vehicle> Reached destination.")
+                logging.info("Vehicle> Reached destination.")
                 self.set_next_state(STATE_DELIVER)
             else:
-                print("Vehicle> No path found, returning to idle.")
+                logging.info("Vehicle> No path found, returning to idle.")
                 self.set_next_state(STATE_IDLE)
         else:
             self.set_next_state(STATE_IDLE)
 
 class StateDeliver(State):
     async def run(self):
-        print("Vehicle> Delivering supplies.")
+        logging.info("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
             task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue.pop(0)  # Dequeue the task
 
             await self.agent.deliver_resources()
-            print(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
+            logging.info(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
 
 
         self.set_next_state(STATE_IDLE)
@@ -118,7 +119,7 @@ class SupplyVehicleAgent(Agent):
         """Move the vehicle to the specified position."""
         self.x_pos = x
         self.y_pos = y
-        print(f"Moved to position: ({self.x_pos}, {self.y_pos})")
+        logging.info(f"Moved to position: ({self.x_pos}, {self.y_pos})")
 
     async def supply(self, resource, tile_data):
         tile_resource = tile_data[resource]
@@ -163,7 +164,7 @@ class SupplyVehicleAgent(Agent):
             return distance + fuel_needed
 
         self.priority_queue = sorted(self.priority_queue, key=task_priority)
-        print(f"Re-prioritized queue: {self.priority_queue}")
+        logging.info(f"Re-prioritized queue: {self.priority_queue}")
 
     
     
@@ -177,10 +178,10 @@ class SupplyVehicleAgent(Agent):
             self.resources["food"] -= task["food_needed"]
         if self.resources["seats"] >= task["seats_needed"]:
             self.resources["seats"] -= task["seats_needed"]
-        print(f"Vehicle> Delivered resources for task: {task}")
+        logging.info(f"Vehicle> Delivered resources for task: {task}")
 
     async def setup(self):
-        print(f"Vehicle> Set up with JID {self.jid}.")
+        logging.info(f"Vehicle> Set up with JID {self.jid}.")
         await self.environment.updatePositionVehicle(0, 0, self.x_pos, self.y_pos, True)
 
         behaviour = FSMBehaviour()
