@@ -1,7 +1,7 @@
 from shared.logger import logging
 
 from agents.respondAgent import ResponderAgent
-from agents.civilianAgent import CivilianAgent
+from agents.shelterAgent import ShelterAgent
 from agents.supplyVehicle import SupplyVehicleAgent
 from shared.singletonMeta import SingletonMeta
 from asyncio import Lock
@@ -51,7 +51,7 @@ class AgentManager(metaclass=SingletonMeta):
         agent_mapping = {
             "responder": ResponderAgent,
             "vehicle": SupplyVehicleAgent,
-            "shelter": None,  # TODO: Replace with ShelterAgent
+            "shelter": ShelterAgent
         }
 
         for agent_prefix, agent_class in agent_mapping.items():

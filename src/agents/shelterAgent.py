@@ -18,7 +18,7 @@ transportation of civilians to shelters.
 # fix msg.body
 
 class ShelterAgent(Agent):
-    def __init__(self, jid, password):
+    def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.inventory = {
             "water": 100,  # Available units

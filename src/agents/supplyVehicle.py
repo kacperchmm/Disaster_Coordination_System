@@ -90,9 +90,22 @@ class StateDeliver(State):
             logging.info(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
 
             #
-            # Send message to civilian 
+            # set up a shelter agent, who will tell the civilian help is provided
+            #
+            # check supplies, go to base if needed or go to other disaster  
             #
 
+            shelter_agent = self.agent.manager.getFirstAvailableHost("shelter")
+            
+            #
+            # send message to shelter, maybe in the same format as to responder
+            # like init, then message or just a message to set up a shelter
+            #
+
+
+            #
+            # new state needed for going back to base
+            #
 
         self.set_next_state(STATE_IDLE)
 
