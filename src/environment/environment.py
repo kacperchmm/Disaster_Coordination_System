@@ -50,4 +50,4 @@ class Environment(metaclass=SingletonMeta):
             return self.board[x_axis][y_axis].getCommunication()
 
     async def updatePositionVehicle(self, x_axis, y_axis):
-        self.board[x_axis, y_axis].emergency = "Vehicle"
+        self.board[x_axis][y_axis].emergency = "Vehicle"

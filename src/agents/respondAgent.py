@@ -1,98 +1,108 @@
-from .utils import parseMessage
-
-from spade import wait_until_finished
 from spade.agent import Agent
+from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
-from spade.behaviour import CyclicBehaviour
 
-from shared.spinningCircle import spinner
-from agents.common import parseMessage
+from shared.utils import parseMessage
 
-import asyncio
-import heapq
+STATE_RECEIVE_CIVILIAN_REQUEST = "STATE_RECEIVE_CIVILIAN_REQUEST"
+STATE_SEND_PRIORITY_QUEUE = "STATE_SEND_PRIORITY_QUEUE"
+
+# Responder has to collect few messages from civilians
+# Responder has to send the messages to supply:
+#   - first send string with number of messages. eg. "init,{number_of_messages},0"
+#   - take string_format_msg from priority queue and send them to vehicles
+#           
+
+class ResponderBehaviour(FSMBehaviour):
+    async def on_start(self):
+        print(f"Responder> Starting at initial state {self.current_state}")
+
+    async def on_end(self):
+        print(f"Responder> finished at state {self.current_state}")
+
+class StateReceiveCivilianRequest(State):
+    async def run(self):
+        print("Responder> Waiting for civilian request...")
+
+        msg = await self.receive(timeout=10)
+        if msg:
+            try:
+                #
+                # Collect few messages from civilians, less than 3
+                #
+
+                data = parseMessage(msg.body)
+                print(f"Responder> Received a request: {data}")
+
+                self.agent.priority_queue.append((6, data))
+
+                self.set_next_state(STATE_SEND_PRIORITY_QUEUE)
+            except Exception as exc:
+                print(f"Error parsing message: {exc}")
+                self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)  # Stay in the same state
+
+        else:
+            print("Responder> Waiting for message.")
+            self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
+
+class StateSendPriorityQueue(State):
+    async def run(self):
+        print("Responder> Sending priority queue...")
+        if self.agent.priority_queue:
+
+            #
+            # Get a length of needs list, and send it in format eg. "init,{number_of_messages},0"
+            #
+            # Create a list of string in our message format <help,x_pos,y_pos>
+            # send them one by one to supply,
+            #
+
+            sorted_queue = sorted(self.agent.priority_queue, key=lambda x: x[0])
+            print(f"Responder> sorted queye{str(sorted_queue)}")
+
+            vehicle_host = await self.agent.manager.getFirstAvailableHost("vehicle")
+
+            print(f"Responder> Connected to {vehicle_host}")
+
+            msg = Message(to=str(vehicle_host)) 
+            msg.set_metadata("ontology", "priority_queue")
+            msg.body = "test"
+            await self.send(msg)
+            print("Receiver> Message sent do vehicle")
+        else:
+            print(f"Responder> queue empty")
+        
+        # After sending, transition to the receive civilian request state again
+        self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
 
 class ResponderAgent(Agent):
     def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.environment = environment  # Shared environment reference
         self.priority_queue = []  # Store tasks prioritized by urgency
-        self.environment = environment
         self.manager = manager
 
-    async def send_priority_queue(self):
-        if self.priority_queue:
-            sorted_queue = sorted(self.priority_queue, key=lambda x: x['priority'])
-            msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
-            msg.set_metadata("ontology", "priority_queue")
-            msg.body = str(sorted_queue)
-            await self.send(msg)
-            print(f"Sent sorted priority queue: {sorted_queue}")
-
-    class ReceiveCivilianRequests(CyclicBehaviour):
-        async def run(self):
-            # Wait for a message from civilian agents
-            msg = await self.receive(timeout=10)
-            if msg:
-                # Parse the incoming message
-                try:
-                    data = parseMessage(msg.body)
-                    print(f"Responder received a request: {data}")
-                    
-                    # Add the request to the priority queue
-                    self.agent.priority_queue.append((data["priority"], data))
-                    self.agent.priority_queue.sort(reverse=True)  # Sort by priority
-                    
-                except Exception as exc:
-                    print(f"Error parsing message: {exc}")
-
-    class ResponderResponseBehaviour(CyclicBehaviour):
-        def __init__(self, environment):
-            super().__init__()
-            self.environment = environment
-
-        async def run(self):
-            # Process tasks from the priority queue
-            if self.agent.priority_queue:
-
-                _, task = self.agent.priority_queue.pop(0)
-                print(f"Responder handling task: {task}")
-
-                # Extract task details
-                emergency_need = task.get("emergency_need", "unknown")
-                x_axis = task.get("x_position", 0)
-                y_axis = task.get("y_position", 0)
-
-                msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
-                msg.set_metadata("ontology", "priority_queue")
-                msg.body = str(self.agent.priority_queue)
-                await self.send(msg)
-                print(f"Sent sorted priority queue: {self.agent.priority_queue}")
-
-                # Update the environment (mark the task location as safe)
-                tile_changes = {
-                    "x_position": x_axis,
-                    "y_position": y_axis,
-                    "emergency_type": "Safe"
-                }
-
-                await self.environment.setTile(tile_changes)
-                print(f"Updated environment tile: {tile_changes}")
-
-    class SendPriorityQueueBehaviour(CyclicBehaviour):
-        async def run(self):
-            await self.agent.send_priority_queue()
-
     async def setup(self):
-        print("Responder agent starting...")
+        print("Responder> Starting...")
 
-        # Add the behavior to receive civilian requests
-        receive_civilian_requests = self.ReceiveCivilianRequests()
-        self.add_behaviour(receive_civilian_requests)
+        behaviour = ResponderBehaviour()
 
-        b = self.SendPriorityQueueBehaviour()
-        self.add_behaviour(b)
-        
-        # Add the behavior to process and respond to tasks
-        responder_response = self.ResponderResponseBehaviour(self.environment)
-        self.add_behaviour(responder_response)
+        #
+        # Add states to the FSM 
+        #
 
+        behaviour.add_state(name=STATE_RECEIVE_CIVILIAN_REQUEST, state=StateReceiveCivilianRequest(), initial=True)
+        behaviour.add_state(name=STATE_SEND_PRIORITY_QUEUE, state=StateSendPriorityQueue())
+
+        #
+        # Define transitions between states
+        #
+
+        behaviour.add_transition(source=STATE_RECEIVE_CIVILIAN_REQUEST, dest=STATE_SEND_PRIORITY_QUEUE)
+        behaviour.add_transition(source=STATE_SEND_PRIORITY_QUEUE, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
+        behaviour.add_transition(source=STATE_RECEIVE_CIVILIAN_REQUEST, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
+
+        #
+        # Add the FSM behaviour to the agent
+        #
+        self.add_behaviour(behaviour)

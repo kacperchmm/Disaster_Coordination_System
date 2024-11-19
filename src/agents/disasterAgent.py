@@ -2,8 +2,6 @@ from spade.agent import Agent
 from spade.message import Message
 from spade.behaviour import CyclicBehaviour
 
-from agents.common import parseMessage
-
 import asyncio
 import random
 

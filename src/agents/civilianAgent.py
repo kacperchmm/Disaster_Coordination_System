@@ -1,12 +1,8 @@
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
-from agents.utils import parseMessage
 
-from spade.behaviour import OneShotBehaviour
-
-from spade import wait_until_finished
-from agents.common import parseMessage
+from shared.utils import parseMessage
 
 STATE_PEACE = "STATE_PEACE"
 STATE_ASK_FOR_HELP = "STATE_ASK_FOR_HELP"
@@ -98,14 +94,29 @@ class CivilianAgent(Agent):
 
     async def setup(self):
         behaviour = CivilianBehaviour()
+        
+        #
+        # Adding functions to states
+        #
+
         behaviour.add_state(name=STATE_PEACE, state=StatePeace(), initial=True)
         behaviour.add_state(name=STATE_ASK_FOR_HELP, state=StateAskForHelp())
         behaviour.add_state(name=STATE_WAIT_FOR_HELP, state=StateWaitForHelp())
         behaviour.add_state(name=STATE_GOODBYE, state=StateGoodBye())
+
+        #
+        # Creating transitions
+        #
+
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_ASK_FOR_HELP)
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_PEACE)
         behaviour.add_transition(source=STATE_ASK_FOR_HELP, dest=STATE_WAIT_FOR_HELP)
         behaviour.add_transition(source=STATE_WAIT_FOR_HELP, dest=STATE_PEACE)
+
+        #
+        # Adding behaviour to agent, and agent's list of behaviours
+        #
+
         self.add_behaviour(behaviour)
         self.created_behaviours["state_machine"] = behaviour
         await self.manager.addCivilian(self)
