@@ -64,9 +64,13 @@ class StateSendPriorityQueue(State):
 
             print(f"Responder> Connected to {vehicle_host}")
 
+            _, task = sorted_queue.pop(0)
+
+            task_str = ','.join(map(str, task))
+
             msg = Message(to=str(vehicle_host)) 
             msg.set_metadata("ontology", "priority_queue")
-            msg.body = "test"
+            msg.body = task_str
             await self.send(msg)
             print("Receiver> Message sent do vehicle")
         else:

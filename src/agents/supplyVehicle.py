@@ -25,7 +25,17 @@ class StateReceiveTasks(State):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "priority_queue":
-            self.agent.priority_queue = json.loads(msg.body)
+            print(f"Vehicle> received a {msg.body}")
+
+            need, x_pos, y_pos = parseMessage(msg.body)
+
+            disaster_coordinates = {
+                "x_position": x_pos,
+                "y_position": y_pos
+            }
+
+            self.agent.priority_queue.append(disaster_coordinates)
+
             print(f"Vehicle> Received sorted priority queue: {self.agent.priority_queue}")
             self.set_next_state(STATE_NAVIGATE if self.agent.priority_queue else STATE_IDLE)
         else:
@@ -45,8 +55,10 @@ class StateNavigate(State):
             if path:
                 for step in path:
                     print(f"Vehicle> Moving to position: {step}")
+
+                    await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False)
                     self.agent.x_pos, self.agent.y_pos = step
-                    await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos)
+
                     await asyncio.sleep(1)
                 print("Vehicle> Reached destination.")
                 self.set_next_state(STATE_DELIVER)
@@ -61,14 +73,11 @@ class StateDeliver(State):
         print("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
             task = self.agent.priority_queue.pop(0)  # Dequeue the task
-            self.agent.deliver_resources(task)
-            tile_changes = {
-                "x_position": task["x_position"],
-                "y_position": task["y_position"],
-                "status": "Supplied"
-            }
-            await self.agent.environment.setTile(tile_changes)
-            print(f"Vehicle> Supplies delivered to ({tile_changes['x_position']}, {tile_changes['y_position']}).")
+
+            await self.agent.deliver_resources()
+            print(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
+
+
         self.set_next_state(STATE_IDLE)
 
 
@@ -77,14 +86,14 @@ class SupplyVehicleAgent(Agent):
         super().__init__(jid, password)
         self.environment = environment  # Shared environment reference
         self.manager = manager # Manager of created agent hosts
-        self.x_pos = 0  # Current X position of the vehicle
-        self.y_pos = 0  # Current Y position of the vehicle
+        self.x_pos = 4  # Current X position of the vehicle
+        self.y_pos = 2  # Current Y position of the vehicle
         self.priority_queue = []  # Priority queue for tasks (min-heap)
         self.resources = {
-            "fuel": 100,
-            "medical_supplies": 50,
-            "food": 100,
-            "seats": 6
+            "fuel": 9999999,
+            "medicine": 9999999,
+            "food": 99999999,
+            "seats": 99999999
         }
 
     def get_pos(self):
@@ -97,18 +106,40 @@ class SupplyVehicleAgent(Agent):
         self.y_pos = y
         print(f"Moved to position: ({self.x_pos}, {self.y_pos})")
 
-    def deliver_resources(self, task):
-        """Deliver resources based on the task requirements."""
-        # Example logic for delivering resources
-        if self.resources["fuel"] >= task["fuel_needed"]:
-            self.resources["fuel"] -= task["fuel_needed"]
-        if self.resources["medical_supplies"] >= task["medical_supplies_needed"]:
-            self.resources["medical_supplies"] -= task["medical_supplies_needed"]
-        if self.resources["food"] >= task["food_needed"]:
-            self.resources["food"] -= task["food_needed"]
-        if self.resources["seats"] >= task["seats_needed"]:
-            self.resources["seats"] -= task["seats_needed"]
-        print(f"Delivered resources for task: {task}")
+    async def supply(self, resource, tile_data):
+        tile_resource = tile_data[resource]
+        vehicle_resource = self.resources[resource]
+
+        result_change = 0
+
+        if vehicle_resource >= tile_resource:
+            self.resources[resource] -= tile_resource
+        else:
+            result_change = tile_resource - vehicle_resource
+            self.resources[resource] = 0
+
+        return result_change
+
+
+    async def deliver_resources(self):
+        tile_data = await self.environment.getTile(self.x_pos, self.y_pos)
+
+        medicine_res = self.supply("medicine", tile_data)
+        people_res   = self.supply("people", tile_data)
+        food_res     = self.supply("food", tile_data)
+
+        is_safe = medicine_res + people_res + food_res
+
+        tile_changes = {
+            "status": is_safe == 0 if "Safe" else tile_data["status"],
+            "x_position": self.x_pos,
+            "y_position": self.y_pos,
+            "medicine": medicine_res,
+            "people": people_res,
+            "food": food_res
+        }
+
+        await self.environment.setTile(tile_changes)
 
     def prioritize_tasks(self):
         """Re-prioritize tasks based on location and fuel resources."""
@@ -136,7 +167,7 @@ class SupplyVehicleAgent(Agent):
 
     async def setup(self):
         print(f"Vehicle> Set up with JID {self.jid}.")
-        await self.environment.updatePositionVehicle(self.x_pos, self.y_pos)
+        await self.environment.updatePositionVehicle(0, 0, self.x_pos, self.y_pos, True)
 
         behaviour = FSMBehaviour()
         behaviour.add_state(name=STATE_IDLE, state=StateIdle(), initial=True)

@@ -36,23 +36,10 @@ async def main():
     base_settings = {
         "x_position": 4,
         "y_position": 2,
-        "emergency_type": "Base",
+        "status": "Base",
     }
 
-    # await env.setTile(base_settings)
-
-    # emergency_settings = {
-    #     "x_position": 1,
-    #     "y_position": 1,
-    #     "emergency_type": "Fire",
-    #     "food": 32904,
-    #     "people": 92313,
-    #     "medicine": 154,
-    #     "blockage": False,
-    #     "communication": True
-    # }
-
-    # await env.setTile(emergency_settings)
+    await env.setTile(base_settings)
 
 if __name__ == "__main__":
     spade.run(main())
