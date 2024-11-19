@@ -25,7 +25,7 @@ class StateReceiveTasks(State):
     async def run(self):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
-        if msg and msg.get_metadata("ontology") == "priority_queue":
+        if msg and msg.get_metadata("ontology") == "init":
             received_msg = parseMessage(msg.body)
             init_message = received_msg[1]
 
@@ -34,13 +34,17 @@ class StateReceiveTasks(State):
                 if msg:
                     task = parseMessage(msg.body)
                     self.agent.priority_queue.append(task)
-                else:
-                    print("Vehicle> No tasks received.")
-                    self.set_next_state(STATE_IDLE)
-                    return
+                    print(f"Vehicle> Recieved message {task} :)")
+                # else:
+                #     print("Vehicle> No tasks received.")
+                #     self.set_next_state(STATE_IDLE)
+                #     return
 
-            print(f"Vehicle> Received {init_message} tasks.")
+            print(f"Vehicle> Received {self.agent.priority_queue}")
+            self.set_next_state(STATE_NAVIGATE)
         else:
+            if msg:
+                print(f"Vehicle> Received wrong message {msg.body}")
             print("Vehicle> No tasks received, staying idle.")
             self.set_next_state(STATE_IDLE)
 

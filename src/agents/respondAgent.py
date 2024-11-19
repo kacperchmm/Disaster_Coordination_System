@@ -75,7 +75,7 @@ class StateSendPriorityQueue(State):
         # Create and send the prioritized messages one by one
         for request in self.agent.civilian_requests:
             print(f"DEBUG> Responder request is {request}")
-            help_msg = f"help,{request[1]},{request[2]}"
+            help_msg = f"{request[0]},{request[1]},{request[2]}"
             msg = Message(to=vehicle_host)  # Replace with actual JID
             msg.set_metadata("ontology", "priority_queue")
             msg.body = help_msg
