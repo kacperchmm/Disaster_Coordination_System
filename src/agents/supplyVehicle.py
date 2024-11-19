@@ -53,10 +53,10 @@ class StateNavigate(State):
     async def run(self):
         logging.info("Vehicle> Navigating to task location.")
         if self.agent.priority_queue:
-            task = self.agent.prioritize_tasks()
+            # task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue[0]  # Peek at the next task
             start_position = self.agent.get_pos()
-            destination = (task["x_position"], task["y_position"])
+            destination = (task[1], task[2])
 
             # Find the optimal path
             path = a_star_search(heuristic, start_position, destination, self.agent.environment.board)
@@ -80,11 +80,18 @@ class StateDeliver(State):
     async def run(self):
         logging.info("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
-            task = self.agent.prioritize_tasks()
+            #
+            # TODO: repair reprioritizing tasks
+            # task = self.agent.prioritize_tasks()
+            #
             task = self.agent.priority_queue.pop(0)  # Dequeue the task
 
             await self.agent.deliver_resources()
             logging.info(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
+
+            #
+            # Send message to civilian 
+            #
 
 
         self.set_next_state(STATE_IDLE)
@@ -165,20 +172,6 @@ class SupplyVehicleAgent(Agent):
 
         self.priority_queue = sorted(self.priority_queue, key=task_priority)
         logging.info(f"Re-prioritized queue: {self.priority_queue}")
-
-    
-    
-    def deliver_resources(self, task):
-        """Deliver resources based on the task requirements."""
-        if self.resources["fuel"] >= task["fuel_needed"]:
-            self.resources["fuel"] -= task["fuel_needed"]
-        if self.resources["medical_supplies"] >= task["medical_supplies_needed"]:
-            self.resources["medical_supplies"] -= task["medical_supplies_needed"]
-        if self.resources["food"] >= task["food_needed"]:
-            self.resources["food"] -= task["food_needed"]
-        if self.resources["seats"] >= task["seats_needed"]:
-            self.resources["seats"] -= task["seats_needed"]
-        logging.info(f"Vehicle> Delivered resources for task: {task}")
 
     async def setup(self):
         logging.info(f"Vehicle> Set up with JID {self.jid}.")
