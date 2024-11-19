@@ -46,7 +46,7 @@ def update_resource_inventory(resource, inventory, amount):
         return False
 
 
-def a_star_search(h, start, goal, board):
+def a_star_search(heuristic_func, start, goal, board):
     open_list = []
     heapq.heappush(open_list, (0, start))
     
@@ -71,14 +71,14 @@ def a_star_search(h, start, goal, board):
         neighbors = get_neighbors(current, board)
         for neighbor in neighbors:
             # calculate cost for neighbour
-            terrain_cost = h(neighbor)
+            terrain_cost = heuristic_func(neighbor, goal)
             # heuristic for obsticles
             new_g_cost = g_costs[current] + terrain_cost
             
             # if new path is better
             if neighbor not in g_costs or new_g_cost < g_costs[neighbor]:
                 g_costs[neighbor] = new_g_cost
-                f_cost = new_g_cost + h(neighbor)  # Total cost (g + h)
+                f_cost = new_g_cost + heuristic_func(neighbor, goal)  # Total cost (g + h)
                 heapq.heappush(open_list, (f_cost, neighbor))
                 came_from[neighbor] = current
     

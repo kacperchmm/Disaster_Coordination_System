@@ -15,7 +15,7 @@ class Disaster:
     # Value argument is a dictionary with following keys:
     # "x_position": Number,
     # "y_position": Number,
-    # "emergency_type": String,
+    # "status": String,
     # "food": Number,
     # "people": Number,
     # "medicine": Number,
@@ -23,13 +23,23 @@ class Disaster:
     # "communication": Bool
     #
 
-    async def setDisaster(self, env, value):
-        self.emergency = value["emergency_type"]
+    async def setDisaster(self, value):
+        self.emergency = value["status"]
         self.food_to_provide = value["food"]
         self.people_to_rescue = value["people"]
         self.medicine_to_provide = value["medicine"]
         self.blockage_status = value["blockage"]
         self.communication_status = value["communication"]
+
+    async def getTileData(self):
+        result = {
+            "status": self.emergency,
+            "food": self.food_to_provide,
+            "medicine": self.medicine_to_provide,
+            "people": self.people_to_rescue
+        }
+
+        return result
 
 
     async def removeEmergency(self):
@@ -87,9 +97,9 @@ class Disaster:
     def __repr__(self):
         if self.emergency == "Safe":
             return '0'
-        elif self.emergency == "Vehicle":
-            return '\033[33mS\033[0m'       # Yellow color for SupplyVehicle
         elif self.emergency == "Base":
             return '\033[32mB\033[0m'       # Green color for Base tile
+        elif self.emergency == "Vehicle":
+            return '\033[33mS\033[0m'       # Yellow color for SupplyVehicle
         else:
             return "\033[31m#\033[0m"       # Red color for Disaster tile

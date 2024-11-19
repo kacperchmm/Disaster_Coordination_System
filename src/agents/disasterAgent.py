@@ -34,7 +34,7 @@ class DisasterAgent(Agent):
             emergency_settings = {
                 "x_position": x_pos,
                 "y_position": y_pos,
-                "emergency_type": "Fire",
+                "status": "Fire",
                 "food": 32904,
                 "people": 92313,
                 "medicine": 154,

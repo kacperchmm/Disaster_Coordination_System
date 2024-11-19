@@ -19,35 +19,26 @@ class Environment(metaclass=SingletonMeta):
         x = value["x_position"]
         y = value["y_position"]
 
-        if value["emergency_type"] == "Safe":
+        if value["status"] == "Safe":
             await self.board[x][y].removeEmergency()
-        elif value["emergency_type"] == "Base" or value["emergency_type"] == "Vehicle":
-            await self.board[x][y].setEmergency(value["emergency_type"])
+        elif value["status"] == "Base" or value["status"] == "Vehicle":
+            await self.board[x][y].setEmergency(value["status"])
 
         else:
-            await self.board[x][y].setDisaster(self, value)
+            await self.board[x][y].setDisaster(value)
 
         self.display()
 
 
-    async def getTile(self, x_axis, y_axis, operation):
-        if operation == "emergency":
-            return self.board[x_axis][y_axis].getEmergency()
+    async def getTile(self, x_axis, y_axis):
+        return self.board[x_axis][y_axis].getTileData()
 
-        elif operation == "food":
-            return self.board[x_axis][y_axis].getFoodToProvide()
+    async def updatePositionVehicle(self, x_curr, y_curr, x_next, y_next, init):
+        if not init and self.board[x_curr][y_curr].emergency != "Base":
+            self.board[x_curr][y_curr].emergency = "Safe"
+        else:
+            print(f"INIT = {self.board[x_next][y_next].emergency}")
+        if self.board[x_next][y_next].emergency != "Base":
+            self.board[x_next][y_next].emergency = "Vehicle"
 
-        elif operation == "people":
-            return self.board[x_axis][y_axis].getPeopleToRescue()
-
-        elif operation == "medicine":
-            return self.board[x_axis][y_axis].getMedicineToProvide()
-
-        elif operation == "blockage":
-            return self.board[x_axis][y_axis].getBlockageStatus()
-
-        elif operation == "communication":
-            return self.board[x_axis][y_axis].getCommunication()
-
-    async def updatePositionVehicle(self, x_axis, y_axis):
-        self.board[x_axis][y_axis].emergency = "Vehicle"
+        self.display()
