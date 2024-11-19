@@ -2,7 +2,7 @@ from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
 
-from shared.utils import parseMessage
+from shared.utils import parseMessage, generate_needs
 
 STATE_PEACE = "STATE_PEACE"
 STATE_ASK_FOR_HELP = "STATE_ASK_FOR_HELP"
@@ -50,15 +50,11 @@ class StateAskForHelp(State):
         x_position = self.agent.x_position
         y_position = self.agent.y_position
 
-        #
-        # Ask for certain needs
-        #
-
         responder_host = await self.agent.manager.getFirstAvailableHost("responder")
 
         msg = Message(to=str(responder_host))
         msg.set_metadata("performative", "request")
-        msg.body = f"medicine,{x_position},{y_position}"
+        msg.body = f"{generate_needs()},{x_position},{y_position}"
         await self.send(msg)
         print("Civilian> Help request sent.")
         self.set_next_state(STATE_WAIT_FOR_HELP)

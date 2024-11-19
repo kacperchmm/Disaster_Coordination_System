@@ -25,7 +25,9 @@ class StateReceiveTasks(State):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "priority_queue":
+
             received_msg = parseMessage(msg.body)
+            X = self.agent.read_init_message(received_msg)
 
             #
             # Read init,{X},_ message, Then wait for X messages parse every message to tuple,
@@ -47,6 +49,7 @@ class StateNavigate(State):
     async def run(self):
         print("Vehicle> Navigating to task location.")
         if self.agent.priority_queue:
+            task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue[0]  # Peek at the next task
             start_position = self.agent.get_pos()
             destination = (task["x_position"], task["y_position"])
@@ -71,6 +74,7 @@ class StateDeliver(State):
     async def run(self):
         print("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
+            task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue.pop(0)  # Dequeue the task
             self.agent.deliver_resources(task)
             tile_changes = {
@@ -97,6 +101,10 @@ class SupplyVehicleAgent(Agent):
             "food": 100,
             "seats": 6
         }
+    
+    def read_init_message(self, init_message):
+        X = int(init_message.split(',')[1])
+        return X
 
     def get_pos(self):
         """Get the current position of the supply vehicle."""

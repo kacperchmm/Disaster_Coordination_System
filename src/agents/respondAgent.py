@@ -44,14 +44,15 @@ class StatePrioritizeRequests(State):
         def priority_key(request):
             print(f"DEBUG> Request = {request}")
             priority = 0
-            if request[0] == "medicine":
-                priority += 3
-            if request[0] == "transport":
-                priority += 2
+            if request[0] == "medical":
+                priority += 4
             if request[0] == "rescue":
+                priority += 3
+            if request[0] == "shelter":
+                priority += 2
+            if request[0] == "food":
                 priority += 1
             return priority
-        
 
         self.agent.civilian_requests.sort(key=priority_key, reverse=True)
         print(f"Responder> Prioritized requests: {self.agent.civilian_requests}")
@@ -82,14 +83,6 @@ class StateSendPriorityQueue(State):
             print(f"Responder> Sent prioritized request: {msg.body}")
 
         self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
-
-
-class ResponderAgent(Agent):
-    def __init__(self, jid, password, environment, manager):
-        super().__init__(jid, password)
-        self.environment = environment  # Shared environment reference
-        self.priority_queue = []  # Store tasks prioritized by urgency
-        self.manager = manager
 
 
 class ResponderAgent(Agent):
