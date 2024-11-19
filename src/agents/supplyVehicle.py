@@ -20,27 +20,26 @@ class StateIdle(State):
         print("Vehicle> In idle state.")
         self.set_next_state(STATE_RECEIVE_TASKS)
 
+
 class StateReceiveTasks(State):
     async def run(self):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "priority_queue":
-
             received_msg = parseMessage(msg.body)
-            X = self.agent.read_init_message(received_msg)
+            init_message = received_msg[1]
 
-            #
-            # Read init,{X},_ message, Then wait for X messages parse every message to tuple,
-            # push tuples to priority queue
-            # no need of sorting, responder made this
-            # then decide of sending a help to certain spots
-            #
+            for i in range(init_message):
+                msg = await self.receive(timeout=10)
+                if msg:
+                    task = parseMessage(msg.body)
+                    self.agent.priority_queue.append(task)
+                else:
+                    print("Vehicle> No tasks received.")
+                    self.set_next_state(STATE_IDLE)
+                    return
 
-            print(f"DEBUG> Supply received {received_msg}")
-            self.agent.priority_queue.append(received_msg)
-
-            print(f"Vehicle> Received sorted priority queue: {self.agent.priority_queue}")
-            self.set_next_state(STATE_NAVIGATE if self.agent.priority_queue else STATE_IDLE)
+            print(f"Vehicle> Received {init_message} tasks.")
         else:
             print("Vehicle> No tasks received, staying idle.")
             self.set_next_state(STATE_IDLE)
@@ -102,10 +101,12 @@ class SupplyVehicleAgent(Agent):
             "seats": 6
         }
     
-    def read_init_message(self, init_message):
-        X = int(init_message.split(',')[1])
-        return X
-
+    def read_init_message(self, msg):
+        """Read the initial message and update the number of expected messages."""
+        message = parseMessage(msg.body)
+        num_messages = message[1]
+        return num_messages
+    
     def get_pos(self):
         """Get the current position of the supply vehicle."""
         return self.x_pos, self.y_pos
