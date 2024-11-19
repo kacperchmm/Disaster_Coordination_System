@@ -16,17 +16,12 @@ import time
 import random
 
 async def initCivilianHosts(env, manager):
-    civilian_agent_first = CivilianAgent("civilian0@localhost", "civilian", env, manager)
-    civilian_agent_second = CivilianAgent("civilian1@localhost", "civilian", env, manager)
-    civilian_agent_third = CivilianAgent("civilian2@localhost", "civilian", env, manager)
-    civilian_agent_forth = CivilianAgent("civilian3@localhost", "civilian", env, manager)
-    civilian_agent_fifth = CivilianAgent("civilian4@localhost", "civilian", env, manager)
-
-    await civilian_agent_first.start(auto_register=True)
-    await civilian_agent_second.start(auto_register=True)
-    await civilian_agent_third.start(auto_register=True)
-    await civilian_agent_forth.start(auto_register=True)
-    await civilian_agent_fifth.start(auto_register=True)
+    civilian_agents = []
+    for i in range(5):
+        civilian_agent = CivilianAgent(f"civilian{i}@localhost", "civilian", env, manager)
+        civilian_agents.append(civilian_agent)
+        await civilian_agent.start(auto_register=True)
+        # civilian_agent.web.start(hostname="127.0.0.1", port=10001 + i)  # Ensure the port is unique for each
 
 async def main():
     env = Environment()
@@ -41,23 +36,10 @@ async def main():
     base_settings = {
         "x_position": 4,
         "y_position": 2,
-        "emergency_type": "Base",
+        "status": "Base",
     }
 
-    # await env.setTile(base_settings)
-
-    # emergency_settings = {
-    #     "x_position": 1,
-    #     "y_position": 1,
-    #     "emergency_type": "Fire",
-    #     "food": 32904,
-    #     "people": 92313,
-    #     "medicine": 154,
-    #     "blockage": False,
-    #     "communication": True
-    # }
-
-    # await env.setTile(emergency_settings)
+    await env.setTile(base_settings)
 
 if __name__ == "__main__":
     spade.run(main())

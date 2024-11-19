@@ -2,8 +2,6 @@ from spade.agent import Agent
 from spade.message import Message
 from spade.behaviour import CyclicBehaviour
 
-from agents.common import parseMessage
-
 import asyncio
 import random
 
@@ -36,7 +34,7 @@ class DisasterAgent(Agent):
             emergency_settings = {
                 "x_position": x_pos,
                 "y_position": y_pos,
-                "emergency_type": "Fire",
+                "status": "Fire",
                 "food": 32904,
                 "people": 92313,
                 "medicine": 154,

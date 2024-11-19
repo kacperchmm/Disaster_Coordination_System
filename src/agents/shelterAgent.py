@@ -1,14 +1,8 @@
 from spade.agent import Agent
 from spade.message import Message
-from .utils import parseMessage, fill_resource_inventory, update_resource_inventory
+from ..shared.utils import parseMessage, fill_resource_inventory, update_resource_inventory
 
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour
-
-from spade import wait_until_finished
-from simulation import spinningCircle
-
-import heapq
-
 
 """
 They need to communicate with supply agents to request 
@@ -81,7 +75,7 @@ class ShelterAgent(Agent):
                     self.agent.needs[item] = 10 - available
             
             if self.agent.needs:
-                request_msg = Message(to="supplyvehicle@localhost")
+                request_msg = Message(to="vehicle0@localhost")
                 request_msg.set_metadata("ontology", "resource_request")
                 request_msg.set_metadata("performative", "request")
                 request_msg.body = str(self.agent.needs)  # Send needs as JSON
