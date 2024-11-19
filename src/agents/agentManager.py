@@ -75,8 +75,15 @@ class AgentManager(metaclass=SingletonMeta):
     # when found key is None create instance of it
     #
 
+    async def responderListening(self, agent_name):
+        if agent_name.startswith("responder") and self.agents[agent_name] != None:
+            return await self.agents[agent_name].getState() == "STATE_RECEIVE_CIVILIAN_REQUEST"
+
     async def getFirstAvailableHost(self, agent_name):
         for key, value in self.agents.items():
+            if await self.responderListening(key):
+                return key
+
             if key.startswith(agent_name) and value is None:
                 self.agents[key] = await self.getAgentInstance(key)
                 await self.agents[key].start(auto_register=True)

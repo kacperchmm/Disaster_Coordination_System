@@ -20,25 +20,31 @@ class StateIdle(State):
         print("Vehicle> In idle state.")
         self.set_next_state(STATE_RECEIVE_TASKS)
 
+
 class StateReceiveTasks(State):
     async def run(self):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
-        if msg and msg.get_metadata("ontology") == "priority_queue":
-            print(f"Vehicle> received a {msg.body}")
+        if msg and msg.get_metadata("ontology") == "init":
+            received_msg = parseMessage(msg.body)
+            init_message = received_msg[1]
 
-            need, x_pos, y_pos = parseMessage(msg.body)
+            for i in range(init_message):
+                msg = await self.receive(timeout=10)
+                if msg:
+                    task = parseMessage(msg.body)
+                    self.agent.priority_queue.append(task)
+                    print(f"Vehicle> Recieved message {task} :)")
+                # else:
+                #     print("Vehicle> No tasks received.")
+                #     self.set_next_state(STATE_IDLE)
+                #     return
 
-            disaster_coordinates = {
-                "x_position": x_pos,
-                "y_position": y_pos
-            }
-
-            self.agent.priority_queue.append(disaster_coordinates)
-
-            print(f"Vehicle> Received sorted priority queue: {self.agent.priority_queue}")
-            self.set_next_state(STATE_NAVIGATE if self.agent.priority_queue else STATE_IDLE)
+            print(f"Vehicle> Received {self.agent.priority_queue}")
+            self.set_next_state(STATE_NAVIGATE)
         else:
+            if msg:
+                print(f"Vehicle> Received wrong message {msg.body}")
             print("Vehicle> No tasks received, staying idle.")
             self.set_next_state(STATE_IDLE)
 
@@ -46,6 +52,7 @@ class StateNavigate(State):
     async def run(self):
         print("Vehicle> Navigating to task location.")
         if self.agent.priority_queue:
+            task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue[0]  # Peek at the next task
             start_position = self.agent.get_pos()
             destination = (task["x_position"], task["y_position"])
@@ -72,6 +79,7 @@ class StateDeliver(State):
     async def run(self):
         print("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
+            task = self.agent.prioritize_tasks()
             task = self.agent.priority_queue.pop(0)  # Dequeue the task
 
             await self.agent.deliver_resources()
@@ -95,7 +103,13 @@ class SupplyVehicleAgent(Agent):
             "food": 99999999,
             "seats": 99999999
         }
-
+    
+    def read_init_message(self, msg):
+        """Read the initial message and update the number of expected messages."""
+        message = parseMessage(msg.body)
+        num_messages = message[1]
+        return num_messages
+    
     def get_pos(self):
         """Get the current position of the supply vehicle."""
         return self.x_pos, self.y_pos

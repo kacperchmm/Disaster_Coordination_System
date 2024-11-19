@@ -6,6 +6,8 @@ from shared.utils import parseMessage
 
 STATE_RECEIVE_CIVILIAN_REQUEST = "STATE_RECEIVE_CIVILIAN_REQUEST"
 STATE_SEND_PRIORITY_QUEUE = "STATE_SEND_PRIORITY_QUEUE"
+STATE_PRIORITIZE_REQUESTS = "STATE_PRIORITIZE_REQUESTS"
+
 
 # Responder has to collect few messages from civilians
 # Responder has to send the messages to supply:
@@ -20,30 +22,41 @@ class ResponderBehaviour(FSMBehaviour):
     async def on_end(self):
         print(f"Responder> finished at state {self.current_state}")
 
+
 class StateReceiveCivilianRequest(State):
     async def run(self):
-        print("Responder> Waiting for civilian request...")
+        print("Responder> Waiting for civilian requests...")
 
-        msg = await self.receive(timeout=10)
-        if msg:
-            try:
-                #
-                # Collect few messages from civilians, less than 3
-                #
-
+        self.agent.civilian_requests = []
+        while len(self.agent.civilian_requests) < 3:
+            msg = await self.receive(timeout=10)
+            if msg:
                 data = parseMessage(msg.body)
                 print(f"Responder> Received a request: {data}")
+                self.agent.civilian_requests.append(data)
 
-                self.agent.priority_queue.append((6, data))
+        self.set_next_state(STATE_PRIORITIZE_REQUESTS)
 
-                self.set_next_state(STATE_SEND_PRIORITY_QUEUE)
-            except Exception as exc:
-                print(f"Error parsing message: {exc}")
-                self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)  # Stay in the same state
+class StatePrioritizeRequests(State):
+    async def run(self):
+        print("Responder> Prioritizing requests...")
+        # Custom prioritization logic
+        def priority_key(request):
+            print(f"DEBUG> Request = {request}")
+            priority = 0
+            if request[0] == "medical":
+                priority += 4
+            if request[0] == "rescue":
+                priority += 3
+            if request[0] == "shelter":
+                priority += 2
+            if request[0] == "food":
+                priority += 1
+            return priority
 
-        else:
-            print("Responder> Waiting for message.")
-            self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
+        self.agent.civilian_requests.sort(key=priority_key, reverse=True)
+        print(f"Responder> Prioritized requests: {self.agent.civilian_requests}")
+        self.set_next_state(STATE_SEND_PRIORITY_QUEUE)
 
 class StateSendPriorityQueue(State):
     async def run(self):
@@ -85,28 +98,23 @@ class ResponderAgent(Agent):
         self.environment = environment  # Shared environment reference
         self.priority_queue = []  # Store tasks prioritized by urgency
         self.manager = manager
+        self.created_behaviours = {}
+    
+    async def getState(self):
+        return str(self.created_behaviours["state_machine"].current_state)
 
     async def setup(self):
         print("Responder> Starting...")
 
-        behaviour = ResponderBehaviour()
+        fsm = ResponderBehaviour()
 
-        #
-        # Add states to the FSM 
-        #
+        fsm.add_state(name=STATE_RECEIVE_CIVILIAN_REQUEST, state=StateReceiveCivilianRequest(), initial=True)
+        fsm.add_state(name=STATE_PRIORITIZE_REQUESTS, state=StatePrioritizeRequests())
+        fsm.add_state(name=STATE_SEND_PRIORITY_QUEUE, state=StateSendPriorityQueue())
 
-        behaviour.add_state(name=STATE_RECEIVE_CIVILIAN_REQUEST, state=StateReceiveCivilianRequest(), initial=True)
-        behaviour.add_state(name=STATE_SEND_PRIORITY_QUEUE, state=StateSendPriorityQueue())
+        fsm.add_transition(source=STATE_RECEIVE_CIVILIAN_REQUEST, dest=STATE_PRIORITIZE_REQUESTS)
+        fsm.add_transition(source=STATE_PRIORITIZE_REQUESTS, dest=STATE_SEND_PRIORITY_QUEUE)
+        fsm.add_transition(source=STATE_SEND_PRIORITY_QUEUE, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
 
-        #
-        # Define transitions between states
-        #
-
-        behaviour.add_transition(source=STATE_RECEIVE_CIVILIAN_REQUEST, dest=STATE_SEND_PRIORITY_QUEUE)
-        behaviour.add_transition(source=STATE_SEND_PRIORITY_QUEUE, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
-        behaviour.add_transition(source=STATE_RECEIVE_CIVILIAN_REQUEST, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
-
-        #
-        # Add the FSM behaviour to the agent
-        #
-        self.add_behaviour(behaviour)
+        self.created_behaviours["state_machine"] = fsm
+        self.add_behaviour(fsm) 
