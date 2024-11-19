@@ -1,4 +1,4 @@
-import logging
+from shared.logger import logging
 
 from agents.respondAgent import ResponderAgent
 from agents.civilianAgent import CivilianAgent
@@ -38,7 +38,7 @@ class AgentManager(metaclass=SingletonMeta):
     async def getCivilianJid(self):
         for key, _ in self.agents.items()   :
             if key.startswith("civilian") and await self.agents[key].getState() == "STATE_PEACE":
-                print(f"FOUND {self.agents[key].jid}")
+                logging.info(f"FOUND {self.agents[key].jid}")
                 return str(self.agents[key].jid)
             
 
@@ -57,18 +57,18 @@ class AgentManager(metaclass=SingletonMeta):
         for agent_prefix, agent_class in agent_mapping.items():
             if agent_name.startswith(agent_prefix):
                 if agent_class:
-                    print(f"Manager> key = {agent_name}, agent = {agent_prefix}")
+                    logging.info(f"key = {agent_name}, agent = {agent_prefix}")
                     return agent_class(agent_name, agent_prefix, self.env, self)
                 else:
-                    print(f"CORE> Agent type '{agent_name}' is not implemented.")
+                    logging.info(f"CORE> Agent type '{agent_name}' is not implemented.")
                     return ":)"
 
     async def removeAgentInstance(self, key):
         if key in self.agents:
-            print(f"CORE> Removing agent {key}")
+            logging.info(f"CORE> Removing agent {key}")
             self.agents[key] = None
         else:
-            print(f"CORE> Key '{key}' does not exist.") 
+            logging.error(f"CORE> Key '{key}' does not exist.") 
 
     #
     # Looking for empty slot in dictionary by keys "agent_name{i}@localhost"
@@ -88,5 +88,5 @@ class AgentManager(metaclass=SingletonMeta):
                 self.agents[key] = await self.getAgentInstance(key)
                 await self.agents[key].start(auto_register=True)
                 return key
-        print(f"ERROR> No available host found for {agent_name}")
+        logging.error(f"ERROR> No available host found for {agent_name}")
         return None

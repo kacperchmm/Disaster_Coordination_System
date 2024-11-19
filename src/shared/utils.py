@@ -1,4 +1,7 @@
 from spade.message import Message
+
+from shared.logger import logging
+
 import heapq
 import random
 
@@ -13,14 +16,18 @@ def parseMessage(message):
     parts = message.split(',')
 
     if len(parts) != 3:
-        raise ValueError("Wrong format of message!\n Expected: '<str>,<number>,<number>'")
+        error_message = "Wrong format of message!\n Expected: '<str>,<number>,<number>'"
+        logging.error(f"ValueError: {error_message}")
+        raise ValueError(error_message)
 
     string_value = parts[0]
     try:
         number1 = int(parts[1])
         number2 = int(parts[2])
     except ValueError:
-        raise ValueError("The second and third values must be valid integers.")
+        error_message = "The second and third values must be valid integers."
+        logging.error(f"ValueError: {error_message}")
+        raise ValueError(error_message)
 
     return string_value, number1, number2
 
@@ -34,15 +41,15 @@ def fill_resource_inventory(inventory, resource, amount):
     for resource, amount in inventory.items():
         inventory[resource] += amount
         inventory[resource] = max(0, inventory(resource, 0) - amount)
-        print(f"{resource} added. Total: {inventory[resource]}")
+        logging.info(f"{resource} added. Total: {inventory[resource]}")
 
 def update_resource_inventory(resource, inventory, amount):
     if resource in inventory and inventory[resource] >= amount:
         inventory[resource] -= amount
-        print(f"{resource} consumed. Remaining: {inventory[resource]}")
+        logging.info(f"{resource} consumed. Remaining: {inventory[resource]}")
         return True
     else:
-        print(f"Not enough {resource} or resource does not exist. Task cannot proceed.")
+        logging.info(f"Not enough {resource} or resource does not exist. Task cannot proceed.")
         return False
 
 

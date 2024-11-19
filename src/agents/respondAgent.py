@@ -2,6 +2,7 @@ from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
 
+from shared.logger import logging
 from shared.utils import parseMessage
 
 STATE_RECEIVE_CIVILIAN_REQUEST = "STATE_RECEIVE_CIVILIAN_REQUEST"
@@ -17,32 +18,32 @@ STATE_PRIORITIZE_REQUESTS = "STATE_PRIORITIZE_REQUESTS"
 
 class ResponderBehaviour(FSMBehaviour):
     async def on_start(self):
-        print(f"Responder> Starting at initial state {self.current_state}")
+        logging.info(f"Responder> Starting at initial state {self.current_state}")
 
     async def on_end(self):
-        print(f"Responder> finished at state {self.current_state}")
+        logging.info(f"Responder> finished at state {self.current_state}")
 
 
 class StateReceiveCivilianRequest(State):
     async def run(self):
-        print("Responder> Waiting for civilian requests...")
+        logging.info("Responder> Waiting for civilian requests...")
 
         self.agent.civilian_requests = []
         while len(self.agent.civilian_requests) < 3:
             msg = await self.receive(timeout=10)
             if msg:
                 data = parseMessage(msg.body)
-                print(f"Responder> Received a request: {data}")
+                logging.info(f"Responder> Received a request: {data}")
                 self.agent.civilian_requests.append(data)
 
         self.set_next_state(STATE_PRIORITIZE_REQUESTS)
 
 class StatePrioritizeRequests(State):
     async def run(self):
-        print("Responder> Prioritizing requests...")
+        logging.info("Responder> Prioritizing requests...")
         # Custom prioritization logic
         def priority_key(request):
-            print(f"DEBUG> Request = {request}")
+            logging.info(f"DEBUG> Request = {request}")
             priority = 0
             if request[0] == "medical":
                 priority += 4
@@ -55,12 +56,12 @@ class StatePrioritizeRequests(State):
             return priority
 
         self.agent.civilian_requests.sort(key=priority_key, reverse=True)
-        print(f"Responder> Prioritized requests: {self.agent.civilian_requests}")
+        logging.info(f"Responder> Prioritized requests: {self.agent.civilian_requests}")
         self.set_next_state(STATE_SEND_PRIORITY_QUEUE)
 
 class StateSendPriorityQueue(State):
     async def run(self):
-        print("Responder> Sending priority queue to supply vehicles...")
+        logging.info("Responder> Sending priority queue to supply vehicles...")
 
         vehicle_host = await self.agent.manager.getFirstAvailableHost("vehicle")
 
@@ -70,18 +71,21 @@ class StateSendPriorityQueue(State):
         init_msg.set_metadata("ontology", "init")
         init_msg.body = f"init,{num_messages},0"
         await self.send(init_msg)
-        print(f"Responder> Sent init message: {init_msg.body}")
+        logging.info(f"Responder> Sent init message: {init_msg.body}")
 
         # Create and send the prioritized messages one by one
         for request in self.agent.civilian_requests:
-            print(f"DEBUG> Responder request is {request}")
+            logging.info(f"DEBUG> Responder request is {request}")
             help_msg = f"help,{request[1]},{request[2]}"
             msg = Message(to=vehicle_host)  # Replace with actual JID
             msg.set_metadata("ontology", "priority_queue")
             msg.body = help_msg
             await self.send(msg)
-            print(f"Responder> Sent prioritized request: {msg.body}")
-
+            logging.info("Receiver> Message sent do vehicle")
+        else:
+            logging.info(f"Responder> queue empty")
+        
+        # After sending, transition to the receive civilian request state again
         self.set_next_state(STATE_RECEIVE_CIVILIAN_REQUEST)
 
 class ResponderAgent(Agent):
@@ -96,7 +100,7 @@ class ResponderAgent(Agent):
         return str(self.created_behaviours["state_machine"].current_state)
 
     async def setup(self):
-        print("Responder> Starting...")
+        logging.info("Responder> Starting...")
 
         fsm = ResponderBehaviour()
 

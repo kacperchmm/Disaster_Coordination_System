@@ -2,6 +2,8 @@ from spade.agent import Agent
 from spade.message import Message
 from spade.behaviour import CyclicBehaviour
 
+from shared.logger import logging
+
 import asyncio
 import random
 
@@ -10,7 +12,7 @@ class DisasterAgent(Agent):
         super().__init__(jid, password)
         self.env = environment
         self.manager = manager
-        print("TEST 1")
+        logging.info("TEST 1")
 
 
     class NewDisasterBehaviour(CyclicBehaviour):
@@ -23,13 +25,13 @@ class DisasterAgent(Agent):
             msg.set_metadata("performative", "request")
             msg.body = f"disaster,{x_pos},{y_pos}"
             await self.send(msg)
-            print(f"Disaster> Message sent to {recipient_id}: disaster at [{x_pos}, {y_pos}]")
+            logging.info(f"Disaster> Message sent to {recipient_id}: disaster at [{x_pos}, {y_pos}]")
 
         async def run(self):
 
             x_pos = random.randint(0, self.env.size - 1)
             y_pos = random.randint(0, self.env.size - 1)
-            print(f"Creating disaster on [{x_pos}, {y_pos}]")
+            logging.info(f"Creating disaster on [{x_pos}, {y_pos}]")
 
             emergency_settings = {
                 "x_position": x_pos,
@@ -48,20 +50,20 @@ class DisasterAgent(Agent):
                     raise ValueError("Disaster> No civilian host found.")
                 
                 await self.env.setTile(emergency_settings)
-                print(f"Disaster> Setting emergency at [{x_pos}, {y_pos}]")
+                logging.info(f"Disaster> Setting emergency at [{x_pos}, {y_pos}]")
 
                 await self.sendMessage(str(civilian_host), x_pos, y_pos)
 
             except Exception as e:
-                print(f"ERROR> Could not create disaster or send message: {e}")
-                print("Disaster> Retrying in the next cycle...")
+                logging.info(f"ERROR> Could not create disaster or send message: {e}")
+                logging.info("Disaster> Retrying in the next cycle...")
                 await asyncio.sleep(20)
 
             delay = random.uniform(1,6)
             await asyncio.sleep(delay)
 
     async def setup(self):
-        print("Disaster> Creating disasters.")
+        logging.info("Disaster> Creating disasters.")
         disaster_behaviour = self.NewDisasterBehaviour(self.env)
         self.add_behaviour(disaster_behaviour)
 
