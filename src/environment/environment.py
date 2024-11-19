@@ -1,6 +1,7 @@
 from .disaster import Disaster
 from shared.singletonMeta import SingletonMeta
 import random
+import os   
 
 class Environment(metaclass=SingletonMeta):
     def __init__(self):
@@ -9,6 +10,7 @@ class Environment(metaclass=SingletonMeta):
         self.terrain_difficulty = [[random.randint(1, 9) for _ in range(self.size)] for _ in range(self.size)]
 
     def display(self):
+        os.system("clear")
         print("\nBoard status is following:")
         for i in range(self.size):
             board_row = " ".join(map(str, self.board[i]))
