@@ -42,12 +42,13 @@ class StatePrioritizeRequests(State):
         print("Responder> Prioritizing requests...")
         # Custom prioritization logic
         def priority_key(request):
+            print(f"DEBUG> Request = {request}")
             priority = 0
-            if request.get("medicine"):
+            if request[0] == "medicine":
                 priority += 3
-            if request.get("transport"):
+            if request[0] == "transport":
                 priority += 2
-            if request.get("rescue"):
+            if request[0] == "rescue":
                 priority += 1
             return priority
         
@@ -60,9 +61,11 @@ class StateSendPriorityQueue(State):
     async def run(self):
         print("Responder> Sending priority queue to supply vehicles...")
 
+        vehicle_host = await self.agent.manager.getFirstAvailableHost("vehicle")
+
         # Send the number of messages first
         num_messages = len(self.agent.civilian_requests)
-        init_msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
+        init_msg = Message(to=vehicle_host)  # Replace with actual JID
         init_msg.set_metadata("ontology", "init")
         init_msg.body = f"init,{num_messages},0"
         await self.send(init_msg)
@@ -70,8 +73,9 @@ class StateSendPriorityQueue(State):
 
         # Create and send the prioritized messages one by one
         for request in self.agent.civilian_requests:
-            help_msg = f"help,{request['x_pos']},{request['y_pos']}"
-            msg = Message(to="supplyvehicleagent@domain")  # Replace with actual JID
+            print(f"DEBUG> Responder request is {request}")
+            help_msg = f"help,{request[1]},{request[2]}"
+            msg = Message(to=vehicle_host)  # Replace with actual JID
             msg.set_metadata("ontology", "priority_queue")
             msg.body = help_msg
             await self.send(msg)
@@ -94,7 +98,10 @@ class ResponderAgent(Agent):
         self.environment = environment  # Shared environment reference
         self.priority_queue = []  # Store tasks prioritized by urgency
         self.manager = manager
+        self.created_behaviours = {}
     
+    async def getState(self):
+        return str(self.created_behaviours["state_machine"].current_state)
 
     async def setup(self):
         print("Responder> Starting...")
@@ -109,4 +116,5 @@ class ResponderAgent(Agent):
         fsm.add_transition(source=STATE_PRIORITIZE_REQUESTS, dest=STATE_SEND_PRIORITY_QUEUE)
         fsm.add_transition(source=STATE_SEND_PRIORITY_QUEUE, dest=STATE_RECEIVE_CIVILIAN_REQUEST)
 
-        self.add_behaviour(fsm)
+        self.created_behaviours["state_machine"] = fsm
+        self.add_behaviour(fsm) 

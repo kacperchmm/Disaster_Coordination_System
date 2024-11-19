@@ -25,7 +25,18 @@ class StateReceiveTasks(State):
         print("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "priority_queue":
-            self.agent.priority_queue = json.loads(msg.body)
+            received_msg = parseMessage(msg.body)
+
+            #
+            # Read init,{X},_ message, Then wait for X messages parse every message to tuple,
+            # push tuples to priority queue
+            # no need of sorting, responder made this
+            # then decide of sending a help to certain spots
+            #
+
+            print(f"DEBUG> Supply received {received_msg}")
+            self.agent.priority_queue.append(received_msg)
+
             print(f"Vehicle> Received sorted priority queue: {self.agent.priority_queue}")
             self.set_next_state(STATE_NAVIGATE if self.agent.priority_queue else STATE_IDLE)
         else:
