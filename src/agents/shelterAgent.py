@@ -1,10 +1,16 @@
 from spade.agent import Agent
 from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
+
 from shared.logger import logging
-from shared.utils import parseMessage, fill_resource_inventory
+from shared.utils import parseMessage
 
 import asyncio
+
+"""
+@file shelterAgent.py
+@description This file contains the ShelterAgent class which is responsible for managing the shelter agents in the simulation.
+"""
 
 STATE_REQUEST_RESOURCES = "STATE_REQUEST_RESOURCES"
 STATE_RECEIVE_SUPPLIES = "STATE_RECEIVE_SUPPLIES"
@@ -97,7 +103,6 @@ class ShelterAgent(Agent):
         }
 
         await self.environment.setTile(tile_changes)
-
 
     async def setInventory(self, need, value):
         logging.info(f"Shelter> Setting {need} to {value}.")

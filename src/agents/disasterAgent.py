@@ -7,6 +7,11 @@ from shared.logger import logging
 import asyncio
 import random
 
+"""
+@file disasterAgent.py
+@description This file contains the DisasterAgent class which is responsible for creating disasters in the simulation.
+"""
+
 class DisasterAgent(Agent):
     def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)

@@ -1,18 +1,14 @@
-from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour
-from spade.template import Template
-from spade.message import Message
-
 from agents.civilianAgent import CivilianAgent
-from agents.respondAgent import ResponderAgent
 from agents.disasterAgent import DisasterAgent
 from agents.agentManager import AgentManager
 from environment.environment import Environment
 
-import asyncio
 import spade
-import time
-import random
+
+"""
+@file main.py
+@description This file contains the main function which is responsible for starting the simulation.
+"""
 
 async def initCivilianHosts(env, manager):
     civilian_agents = []

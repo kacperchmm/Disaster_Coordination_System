@@ -4,31 +4,26 @@ from agents.respondAgent import ResponderAgent
 from agents.shelterAgent import ShelterAgent
 from agents.supplyVehicle import SupplyVehicleAgent
 from shared.singletonMeta import SingletonMeta
-from asyncio import Lock
-import asyncio
+
+"""
+@file agentManager.py
+@description This file contains the AgentManager class which is responsible for managing the agents in the simulation.
+"""
 
 class AgentManager(metaclass=SingletonMeta):
     def __init__(self, env):
         self.numberOfAgents = 5
         self.agents = {}
         self.env = env
-        self.locks = {name: Lock() for name in ['responder', 'civilian', 'vehicle', 'shelter']}
 
-        #
         # Agent object instances
-        #
-
         for i in range(self.numberOfAgents):
             self.agents[f"responder{i}@localhost"] = None
             self.agents[f"civilian{i}@localhost"] = None
             self.agents[f"vehicle{i}@localhost"] = None
             self.agents[f"shelter{i}@localhost"] = None
 
-
-    #
     # Civilian hosts are started on the beggining of main
-    #
-
     async def addCivilian(self, agent_instance):
         for i in range (self.numberOfAgents):
             if self.agents[f"civilian{i}@localhost"] is None:
@@ -47,11 +42,7 @@ class AgentManager(metaclass=SingletonMeta):
                 if shelter_pos == await self.agents[key].getPos():
                     return key
             
-
-    #
     # Creating Instance of needed hosts ande saving it to the agents dictionary
-    #
-
     async def getAgentInstance(self, agent_name):
         print(f"CORE> Starting prosody client {agent_name}")
         agent_mapping = {

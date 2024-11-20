@@ -5,6 +5,12 @@ from spade.message import Message
 from shared.logger import logging
 from shared.utils import parseMessage, generate_needs
 
+"""
+@file civilianAgent.py
+@description This file contains the CivilianAgent class which is responsible for managing the civilian agents in the simulation.
+"""
+
+# Defining the states for the civilian agent
 STATE_PEACE = "STATE_PEACE"
 STATE_ASK_FOR_HELP = "STATE_ASK_FOR_HELP"
 STATE_WAIT_FOR_HELP = "STATE_WAIT_FOR_HELP"
@@ -39,11 +45,6 @@ class StatePeace(State):
             logging.info("Civilian> Waiting for message.")
             self.set_next_state(STATE_PEACE)
 
-#
-# Send help request based on needs
-# Priority: 
-# medicine > food > rescue people
-#
 
 class StateAskForHelp(State):
     async def run(self):
@@ -94,30 +95,20 @@ class CivilianAgent(Agent):
         return res
 
     async def setup(self):
+  
         behaviour = CivilianBehaviour()
         
-        #
-        # Adding functions to states
-        #
-
         behaviour.add_state(name=STATE_PEACE, state=StatePeace(), initial=True)
         behaviour.add_state(name=STATE_ASK_FOR_HELP, state=StateAskForHelp())
         behaviour.add_state(name=STATE_WAIT_FOR_HELP, state=StateWaitForHelp())
         behaviour.add_state(name=STATE_GOODBYE, state=StateGoodBye())
-
-        #
-        # Creating transitions
-        #
 
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_ASK_FOR_HELP)
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_PEACE)
         behaviour.add_transition(source=STATE_ASK_FOR_HELP, dest=STATE_WAIT_FOR_HELP)
         behaviour.add_transition(source=STATE_WAIT_FOR_HELP, dest=STATE_PEACE)
 
-        #
-        # Adding behaviour to agent, and agent's list of behaviours
-        #
-
         self.created_behaviours["state_machine"] = behaviour
         self.add_behaviour(behaviour)
+
         await self.manager.addCivilian(self)

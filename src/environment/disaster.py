@@ -1,5 +1,7 @@
-from agents.civilianAgent import CivilianAgent
-
+"""
+@file disaster.py
+@description This file contains the Disaster class which is responsible for managing the disaster tiles in the simulation.
+"""
 class Disaster:
     def __init__(self, x_arg, y_arg):
         self.x_position = x_arg

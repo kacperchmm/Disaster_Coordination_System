@@ -3,7 +3,13 @@ from shared.singletonMeta import SingletonMeta
 import random
 import os   
 
+"""
+@file environment.py
+@description This file contains the Environment class which is responsible for managing the environment in the simulation.
+"""
+
 class Environment(metaclass=SingletonMeta):
+
     def __init__(self):
         self.size = 10
         self.board = [[Disaster(x, y) for y in range(self.size)] for x in range(self.size)]

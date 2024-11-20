@@ -1,15 +1,10 @@
-from spade.message import Message
-
 from shared.logger import logging
-
 import heapq
 import random
 
-
 """
-emergency_need = what supplies, food, medicine etc.
-
-https://moodle2425.up.pt/pluginfile.php/115075/mod_resource/content/9/ISIA_3%20-%20Multi-Agent%20Systems.pdf
+@file utils.py
+@description This file contains utility functions that are used across the simulation.
 """
 
 def parseMessage(message):
@@ -31,28 +26,10 @@ def parseMessage(message):
 
     return string_value, number1, number2
 
-def generate_priority():
-    return random.randint(1, 10)
-
 def generate_needs():
     return random.choice(["medical", "food", "shelter", "rescue"])
 
-def fill_resource_inventory(inventory, resource, amount):
-    for resource, amount in inventory.items():
-        inventory[resource] += amount
-        inventory[resource] = max(0, inventory(resource, 0) - amount)
-        logging.info(f"{resource} added. Total: {inventory[resource]}")
-
-def update_resource_inventory(resource, inventory, amount):
-    if resource in inventory and inventory[resource] >= amount:
-        inventory[resource] -= amount
-        logging.info(f"{resource} consumed. Remaining: {inventory[resource]}")
-        return True
-    else:
-        logging.info(f"Not enough {resource} or resource does not exist. Task cannot proceed.")
-        return False
-
-
+# A* Search Algorithm
 def a_star_search(heuristic_func, start, goal, board):
     open_list = []
     heapq.heappush(open_list, (0, start))
@@ -102,22 +79,10 @@ def get_neighbors(position, board):
             neighbors.append((nx, ny))
     return neighbors
 
-# Manhattan Distance Heuristic Function
+# Manhattan distance bc it's a grid
 def heuristic(position, goal):
     x1, y1 = position
     x2, y2 = goal
     return abs(x1 - x2) + abs(y1 - y2)
 
 
-"""
-
-Heuristic Function (h): The h parameter takes in the current cell’s coordinates and returns the terrain cost or 
-difficulty for that cell. You may implement h to return different costs based on the type of terrain.
-
-def heuristic(x_pos,y_pos):
-
-    # heuristic = terrain difficulty
-    # board from env
-    # supply vehicle pos
-
-"""

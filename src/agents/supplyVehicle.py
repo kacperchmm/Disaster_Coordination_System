@@ -1,15 +1,18 @@
-from spade import wait_until_finished
-from spade.behaviour import CyclicBehaviour, FSMBehaviour, State
+from spade.behaviour import FSMBehaviour, State
 from spade.agent import Agent
 from spade.message import Message
 
 from shared.logger import logging
 from shared.utils import a_star_search, heuristic, parseMessage
 
-import heapq
 import asyncio
-import json
 
+"""
+@file supplyVehicle.py
+@description This file contains the SupplyVehicleAgent class which is responsible for managing the supply vehicle agents in the simulation.
+"""
+
+# Defining the states for the supply vehicle agent
 STATE_IDLE = "STATE_IDLE"
 STATE_RECEIVE_TASKS = "STATE_RECEIVE_TASKS"
 STATE_NAVIGATE = "STATE_NAVIGATE"
@@ -42,10 +45,6 @@ class StateReceiveTasks(State):
                     task = parseMessage(msg.body)
                     self.agent.priority_queue.append(task)
                     logging.info(f"Vehicle> Recieved message {task} :)")
-                # else:
-                #     print("Vehicle> No tasks received.")
-                #     self.set_next_state(STATE_IDLE)
-                #     return
 
             logging.info(f"Vehicle> Received {self.agent.priority_queue}")
             self.set_next_state(STATE_NAVIGATE)
@@ -59,8 +58,7 @@ class StateNavigate(State):
     async def run(self):
         logging.info("Vehicle> Navigating to task location.")
         if self.agent.priority_queue:
-            # task = self.agent.prioritize_tasks()
-            task = self.agent.priority_queue[0]  # Peek at the next task
+            task = self.agent.priority_queue[0]
             start_position = self.agent.get_pos()
             destination = (task[1], task[2])
 
@@ -86,13 +84,8 @@ class StateDeliver(State):
     async def run(self):
         logging.info("Vehicle> Delivering supplies.")
         if self.agent.priority_queue:
-            #
-            # TODO: repair reprioritizing tasks
-            # task = self.agent.prioritize_tasks()
-            #
             need, x_pos, y_pos = self.agent.priority_queue.pop(0)  # Dequeue the task
 
-            # await self.agent.deliver_resources()
             logging.info(f"Vehicle> Supplied help on {x_pos}, {y_pos}")
             shelter_agent = await self.agent.manager.getFirstAvailableHost("shelter")
             

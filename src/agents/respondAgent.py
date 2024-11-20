@@ -5,16 +5,16 @@ from spade.message import Message
 from shared.logger import logging
 from shared.utils import parseMessage
 
+"""
+@file respondAgent.py
+@description This file contains the ResponderAgent class which is responsible for managing the responder agents in the simulation.
+"""
+
+# Defining the states for the responder agent
 STATE_RECEIVE_CIVILIAN_REQUEST = "STATE_RECEIVE_CIVILIAN_REQUEST"
 STATE_SEND_PRIORITY_QUEUE = "STATE_SEND_PRIORITY_QUEUE"
 STATE_PRIORITIZE_REQUESTS = "STATE_PRIORITIZE_REQUESTS"
 
-
-# Responder has to collect few messages from civilians
-# Responder has to send the messages to supply:
-#   - first send string with number of messages. eg. "init,{number_of_messages},0"
-#   - take string_format_msg from priority queue and send them to vehicles
-#           
 
 class ResponderBehaviour(FSMBehaviour):
     async def on_start(self):
