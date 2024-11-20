@@ -14,7 +14,8 @@ STATE_IDLE = "STATE_IDLE"
 STATE_RECEIVE_TASKS = "STATE_RECEIVE_TASKS"
 STATE_NAVIGATE = "STATE_NAVIGATE"
 STATE_DELIVER = "STATE_DELIVER"
-STATE_PEACE= "STATE_PEACE"
+STATE_BACK_TO_BASE = "STATE_BACK_TO_BASE"
+STATE_FINISH = "STATE_FINISH"
 
 class StateIdle(State):
     async def run(self):
@@ -24,6 +25,11 @@ class StateIdle(State):
 
 class StateReceiveTasks(State):
     async def run(self):
+        if self.agent.priority_queue:
+            logging.info(f"Vehicle> Moving to other disaster, left in queue: {self.agent.priority_queue}")
+            self.set_next_state(STATE_NAVIGATE)
+            return
+
         logging.info("Vehicle> Checking for tasks.")
         msg = await self.receive(timeout=10)
         if msg and msg.get_metadata("ontology") == "init":
@@ -84,30 +90,59 @@ class StateDeliver(State):
             # TODO: repair reprioritizing tasks
             # task = self.agent.prioritize_tasks()
             #
-            task = self.agent.priority_queue.pop(0)  # Dequeue the task
+            need, x_pos, y_pos = self.agent.priority_queue.pop(0)  # Dequeue the task
 
-            await self.agent.deliver_resources()
-            logging.info(f"Vehicle> Supplied help on {task[1]}, {task[2]}")
-
-            #
-            # set up a shelter agent, who will tell the civilian help is provided
-            #
-            # check supplies, go to base if needed or go to other disaster  
-            #
-
-            shelter_agent = self.agent.manager.getFirstAvailableHost("shelter")
+            # await self.agent.deliver_resources()
+            logging.info(f"Vehicle> Supplied help on {x_pos}, {y_pos}")
+            shelter_agent = await self.agent.manager.getFirstAvailableHost("shelter")
             
-            #
-            # send message to shelter, maybe in the same format as to responder
-            # like init, then message or just a message to set up a shelter
-            #
+            msg_init = Message(to=shelter_agent)
+            msg_init.set_metadata("ontology", "init")
+            msg_init.body = f"init,{x_pos},{y_pos}"
+            await self.send(msg_init)
+
+            logging.info(f"Vehicle> Send init message")
+            
+            msg_food = Message(to=shelter_agent)
+            msg_food.set_metadata("ontology", "food")
+            msg_food.body = str(self.agent.resources["food"])
+            await self.send(msg_food)
+
+            logging.info(f"Vehicle> Send food message")
+
+            msg_people = Message(to=shelter_agent)
+            msg_people.set_metadata("ontology", "people")
+            msg_people.body = str(self.agent.resources["seats"])
+            await self.send(msg_people)
+
+            logging.info(f"Vehicle> Send people message")
+
+            msg_medicine = Message(to=shelter_agent)
+            msg_medicine.set_metadata("ontology", "medicine")
+            msg_medicine.body = str(self.agent.resources["medicine"])
+            await self.send(msg_medicine)
+
+            logging.info(f"Vehicle> Send medicine message")
+            self.set_next_state(STATE_BACK_TO_BASE)
+        
 
 
-            #
-            # new state needed for going back to base
-            #
+class StateBackToBase(State):
+    async def run(self):
+        logging.info("Vehicle> On way back to base.")
+        start_position = (self.agent.x_pos, self.agent.y_pos)
+        destination = (4, 2)
+        path = a_star_search(heuristic, start_position, destination, self.agent.environment.board)
+        if path:
+            for step in path:
+                logging.info(f"Vehicle> Moving to position: {step}")
 
-        self.set_next_state(STATE_IDLE)
+                await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False)
+                self.agent.x_pos, self.agent.y_pos = step
+
+                await asyncio.sleep(1)
+            logging.info("Vehicle> Back in base.")
+            self.set_next_state(STATE_IDLE)
 
 
 class SupplyVehicleAgent(Agent):
@@ -159,9 +194,9 @@ class SupplyVehicleAgent(Agent):
     async def deliver_resources(self):
         tile_data = await self.environment.getTile(self.x_pos, self.y_pos)
 
-        medicine_res = self.supply("medicine", tile_data)
-        people_res   = self.supply("people", tile_data)
-        food_res     = self.supply("food", tile_data)
+        medicine_res = await self.supply("medicine", tile_data)
+        people_res   = await self.supply("people", tile_data)
+        food_res     = await self.supply("food", tile_data)
 
         is_safe = medicine_res + people_res + food_res
 
@@ -187,7 +222,6 @@ class SupplyVehicleAgent(Agent):
         logging.info(f"Re-prioritized queue: {self.priority_queue}")
 
     async def setup(self):
-        logging.info(f"Vehicle> Set up with JID {self.jid}.")
         await self.environment.updatePositionVehicle(0, 0, self.x_pos, self.y_pos, True)
 
         behaviour = FSMBehaviour()
@@ -195,10 +229,16 @@ class SupplyVehicleAgent(Agent):
         behaviour.add_state(name=STATE_RECEIVE_TASKS, state=StateReceiveTasks())
         behaviour.add_state(name=STATE_NAVIGATE, state=StateNavigate())
         behaviour.add_state(name=STATE_DELIVER, state=StateDeliver())
+        behaviour.add_state(name=STATE_BACK_TO_BASE, state=StateBackToBase())
+
         behaviour.add_transition(source=STATE_IDLE, dest=STATE_RECEIVE_TASKS)
         behaviour.add_transition(source=STATE_RECEIVE_TASKS, dest=STATE_NAVIGATE)
         behaviour.add_transition(source=STATE_NAVIGATE, dest=STATE_DELIVER)
         behaviour.add_transition(source=STATE_DELIVER, dest=STATE_IDLE)
         behaviour.add_transition(source=STATE_RECEIVE_TASKS, dest=STATE_IDLE)
+        behaviour.add_transition(source=STATE_DELIVER, dest=STATE_BACK_TO_BASE)
+        behaviour.add_transition(source=STATE_BACK_TO_BASE, dest=STATE_IDLE)
+
+        logging.info(f"Vehicle> Set up with JID {self.jid}, state = {behaviour.current_state}.")
 
         self.add_behaviour(behaviour)

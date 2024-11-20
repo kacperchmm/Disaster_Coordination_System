@@ -87,7 +87,7 @@ class Disaster:
         return self.communication_status
 
     async def removeDisaster(self):
-        self.emergency = "Safe"
+        self.emergency = "Rescued"
         self.food_to_provide  = 0
         self.people_to_rescue = 0
         self.medicine_to_provide = 0
@@ -100,6 +100,10 @@ class Disaster:
         elif self.emergency == "Base":
             return '\033[32mB\033[0m'       # Green color for Base tile
         elif self.emergency == "Vehicle":
-            return '\033[33mS\033[0m'       # Yellow color for SupplyVehicle
+            return '\033[33mV\033[0m'       # Yellow color for SupplyVehicle
+        elif self.emergency == "Shelter":
+            return '\033[36mS\033[0m'       # Cyan color for Shelter
+        elif self.emergency == "Rescued":
+            return '\033[35mR\033[0m'       # Magenta color for Rescued
         else:
             return "\033[31m#\033[0m"       # Red color for Disaster tile

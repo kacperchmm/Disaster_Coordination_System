@@ -24,7 +24,7 @@ class Environment(metaclass=SingletonMeta):
 
         if value["status"] == "Safe":
             await self.board[x][y].removeEmergency()
-        elif value["status"] == "Base" or value["status"] == "Vehicle":
+        elif value["status"] == "Base" or value["status"] == "Vehicle" or value["status"] == "Shelter" or value["status"] == "Rescued":
             await self.board[x][y].setEmergency(value["status"])
 
         else:
