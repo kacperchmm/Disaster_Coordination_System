@@ -64,8 +64,8 @@ class StateAskForHelp(State):
 class StateWaitForHelp(State):
     async def run(self):
         logging.info("Civilian> Waiting for help")
-        msg = await self.receive(timeout=10)
-        if msg:
+        msg = await self.receive(timeout=60)
+        if msg and msg.metadata("ontology") == "rescued":
             logging.info("Civilian> Recieved message = " + msg.body)
             self.set_next_state(STATE_PEACE)
 
@@ -88,6 +88,10 @@ class CivilianAgent(Agent):
 
     async def getState(self):
         return str(self.created_behaviours["state_machine"].current_state)
+    
+    async def getPos(self):
+        res = (self.x_position, self.y_position)
+        return res
 
     async def setup(self):
         behaviour = CivilianBehaviour()
@@ -114,6 +118,6 @@ class CivilianAgent(Agent):
         # Adding behaviour to agent, and agent's list of behaviours
         #
 
-        self.add_behaviour(behaviour)
         self.created_behaviours["state_machine"] = behaviour
+        self.add_behaviour(behaviour)
         await self.manager.addCivilian(self)

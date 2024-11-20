@@ -1,111 +1,137 @@
 from spade.agent import Agent
+from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
-from spade.behaviour import OneShotBehaviour, CyclicBehaviour
+from shared.logger import logging
+from shared.utils import parseMessage, fill_resource_inventory
 
-from ..shared.utils import parseMessage, fill_resource_inventory, update_resource_inventory
-from ..shared.logger import logging
+import asyncio
+
+STATE_REQUEST_RESOURCES = "STATE_REQUEST_RESOURCES"
+STATE_RECEIVE_SUPPLIES = "STATE_RECEIVE_SUPPLIES"
+STATE_REPORT_INVENTORY = "STATE_REPORT_INVENTORY"
+
+class ShelterBehaviour(FSMBehaviour):
+    async def on_start(self):
+        logging.info(f"Shelter> Starting at initial state {self.current_state}")
+
+    async def on_end(self):
+        logging.info(f"Shelter> Finished at state {self.current_state}")
 
 
-"""
-They need to communicate with supply agents to request 
-resources and with responder agents to coordinate the 
-transportation of civilians to shelters.
-"""
+class StateRequestResources(State):
+    async def run(self):
+        logging.info("Shelter> Checking for tasks.")
+        msg = await self.receive(timeout=10)
+        if msg and msg.get_metadata("ontology") == "init":
+            _, x_pos, y_pos = parseMessage(msg.body)
 
-# request resource FROM supply
-# request coordinates FROM responder (the queue)
-# supply bidding, lowest cost (distance)
-# fix msg.body
+            await self.agent.setShelter(x_pos, y_pos)
+
+            self.set_next_state(STATE_RECEIVE_SUPPLIES)
+        else:
+            self.set_next_state(STATE_REQUEST_RESOURCES)
+
+class StateReceiveSupplies(State):
+    async def run(self):
+        for i in range(3):
+            msg = await self.receive(timeout=10)
+
+            if msg:
+                need = ""
+                logging.info(f"Shelter> Received {msg.body}")
+                if msg.get_metadata("ontology") == "food":
+                    need = "food"
+                if msg.get_metadata("ontology") == "medicine":
+                    need =  "medicine"
+                if msg and msg.get_metadata("ontology") == "people":
+                    need = "beds"
+
+                await self.agent.setInventory(need, int(msg.body))
+        
+        self.set_next_state(STATE_REPORT_INVENTORY)
+
+
+class StateReportInventory(State):
+    async def run(self):
+        logging.info(f"Shelter> Current inventory: {self.agent.inventory}")
+        logging.info(f"Shelter> Current needs: {self.agent.needs}")
+        
+        await asyncio.sleep(5)
+
+        await self.agent.setRescued()
+
+        shelter_pos = (self.agent.x_pos, self.agent.y_pos)
+        civilian_host = await self.agent.manager.getCivilianFromTile(shelter_pos)
+
+        rescue_msg = f"Rescued from {str(self.agent.jid)}"
+        logging.info(f"Shelter> sending {rescue_msg} message to {civilian_host}")
+
+        msg_rescued = Message(to=civilian_host)
+        msg_rescued.set_metadata("ontology", "rescued")
+        msg_rescued.body = rescue_msg
+        await self.send(msg_rescued)
+
+        self.set_next_state(STATE_REQUEST_RESOURCES)
+
 
 class ShelterAgent(Agent):
     def __init__(self, jid, password, environment, manager):
         super().__init__(jid, password)
         self.inventory = {
-            "water": 100,  # Available units
-            "food": 50,
-            "medicine": 20,
-            "beds": 10,    # Available capacity
-            }
-
-        self.needs = {
-            "water": 0,  # Additional units needed
+            "water": 0,
             "food": 0,
             "medicine": 0,
             "beds": 0,
-            }
+        }
+        self.needs = {}
+        self.environment = environment
+        self.manager = manager
+        self.x_pos = -1
+        self.y_pos = -1
 
-    
-    class RequestResourceBehaviour(CyclicBehaviour):
-        async def run(self):
-            logging.info("Sending request to Supply Agent...")
-            supply_msg = Message(to="supplyagent@localhost")
-            supply_msg.set_metadata("ontology", "resource_request")
-            supply_msg.set_metadata("performative", "request")
-            supply_msg.set_metadata("language", "English")
-            supply_msg.body = ""  # Adjust with specific needs
-            await self.send(supply_msg)
+    async def setRescued(self):
+        tile_changes = {
+            "x_position": self.x_pos,
+            "y_position": self.y_pos,
+            "status": "Rescued"
+        }
 
-            logging.info("Resource request sent to Supply Agent.")
-
-            # Wait for a response
-            response = await self.receive(timeout=10)
-            if response:
-                logging.info(f"Received resources response: {response.body}")
-                # Process the response or update inventory as needed
-
-    class CoordinateTransportBehaviour(CyclicBehaviour):
-        async def run(self):
-            # Prepare and send a request to the responder agent for transport coordination
-            responder_msg = Message(to="responderagent@localhost")
-            responder_msg.set_metadata("ontology", "transport_request")
-            responder_msg.set_metadata("performative", "request")
-            responder_msg.set_metadata("language", "English")
-            responder_msg.body = "" 
-
-            await self.send(responder_msg)
-            logging.info("Transport request sent to Responder Agent.")
-
-            # Wait for an update or confirmation from responder agent
-            confirmation = await self.receive(timeout=10)
-            if confirmation:
-                logging.info(f"Transport coordination confirmed: {confirmation.body}")
-        
-    class InventoryCheckBehaviour(CyclicBehaviour):
-        async def run(self):
-            for item, available in self.agent.inventory.items():
-                if available < 10:  # Threshold
-                    self.agent.needs[item] = 10 - available
-            
-            if self.agent.needs:
-                request_msg = Message(to="vehicle0@localhost")
-                request_msg.set_metadata("ontology", "resource_request")
-                request_msg.set_metadata("performative", "request")
-                request_msg.body = str(self.agent.needs)  # Send needs as JSON
-                await self.send(request_msg)
-                logging.info(f"Requested resources: {self.agent.needs}")
-    
-    class ReceiveSupplyBehaviour(CyclicBehaviour):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            if msg and msg.get_metadata("ontology") == "resource_response":
-                delivered_resources = eval(msg.body)  # Assume body contains a dictionary
-                for item, quantity in delivered_resources.items():
-                    fill_resource_inventory(self.agent.inventory, item, quantity)
+        await self.environment.setTile(tile_changes)
 
 
-    class ReportInventoryBehaviour(CyclicBehaviour):
-        async def run(self):
-            logging.info(f"Current Inventory for {self.agent.name}: {self.agent.inventory}")
-            logging.info(f"Current Needs for {self.agent.name}: {self.agent.needs}")
+    async def setInventory(self, need, value):
+        logging.info(f"Shelter> Setting {need} to {value}.")
+        self.inventory[need] = value
 
-    
+    async def setShelter(self, x_position, y_position):
+        logging.info(f"Shelter> Set up shelter on ({x_position}, {y_position}).")
+        self.x_pos = x_position
+        self.y_pos = y_position
+
+        tile_changes = {
+            "x_position": x_position,
+            "y_position": y_position,
+            "status": "Shelter"
+        }
+
+        await self.environment.setTile(tile_changes)
+
+
     async def setup(self):
-        inventory_check_behaviour = self.InventoryCheckBehaviour()
-        request_supply_behaviour = self.RequestResourceBehaviour()
-        recieve_supply_behaviour = self.ReceiveSupplyBehaviour()
-        report_inventory_behaviour = self.ReportInventoryBehaviour()
-        
-        self.add_behaviour(inventory_check_behaviour())
-        self.add_behaviour(request_supply_behaviour())
-        self.add_behaviour(recieve_supply_behaviour())
-        self.add_behaviour(report_inventory_behaviour())
+        logging.info(f"Shelter> Starting setup")
+        behaviour = ShelterBehaviour()
+
+        # Adding states to the FSM
+        behaviour.add_state(name=STATE_REQUEST_RESOURCES, state=StateRequestResources(), initial=True)
+        behaviour.add_state(name=STATE_RECEIVE_SUPPLIES, state=StateReceiveSupplies())
+        behaviour.add_state(name=STATE_REPORT_INVENTORY, state=StateReportInventory())
+
+        # Define transitions between states
+        behaviour.add_transition(source=STATE_REQUEST_RESOURCES, dest=STATE_RECEIVE_SUPPLIES)
+        behaviour.add_transition(source=STATE_RECEIVE_SUPPLIES, dest=STATE_REPORT_INVENTORY)
+        behaviour.add_transition(source=STATE_REQUEST_RESOURCES, dest=STATE_REQUEST_RESOURCES)
+        behaviour.add_transition(source=STATE_REPORT_INVENTORY, dest=STATE_REQUEST_RESOURCES)
+
+        # Add behaviour to agent and register
+        self.add_behaviour(behaviour)
+        await self.manager.addCivilian(self)  # Adjust to a corresponding manager method for shelters

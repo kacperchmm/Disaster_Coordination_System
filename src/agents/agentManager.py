@@ -36,10 +36,16 @@ class AgentManager(metaclass=SingletonMeta):
                 return
             
     async def getCivilianJid(self):
-        for key, _ in self.agents.items()   :
+        for key, _ in self.agents.items():
             if key.startswith("civilian") and await self.agents[key].getState() == "STATE_PEACE":
                 logging.info(f"FOUND {self.agents[key].jid}")
                 return str(self.agents[key].jid)
+
+    async def getCivilianFromTile(self, shelter_pos):
+        for key, value in self.agents.items():
+            if key.startswith("civilian") and value != None and await self.agents[key].getState() == "STATE_WAIT_FOR_HELP":
+                if shelter_pos == await self.agents[key].getPos():
+                    return key
             
 
     #
@@ -75,13 +81,14 @@ class AgentManager(metaclass=SingletonMeta):
     # when found key is None create instance of it
     #
 
-    async def responderListening(self, agent_name):
-        if agent_name.startswith("responder") and self.agents[agent_name] != None:
-            return await self.agents[agent_name].getState() == "STATE_RECEIVE_CIVILIAN_REQUEST"
+    async def responderListening(self, key, agent_name):
+        logging.info(f"Agent> looking for {agent_name} on {key}")
+        if agent_name.startswith("responder") and key.startswith("responder") and self.agents[key] != None:
+            return await self.agents[key].getState() == "STATE_RECEIVE_CIVILIAN_REQUEST"
 
     async def getFirstAvailableHost(self, agent_name):
         for key, value in self.agents.items():
-            if await self.responderListening(key):
+            if await self.responderListening(key, agent_name):
                 return key
 
             if key.startswith(agent_name) and value is None:
