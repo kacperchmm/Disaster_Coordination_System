@@ -42,9 +42,9 @@ class AgentManager(metaclass=SingletonMeta):
                 if shelter_pos == await self.agents[key].getPos():
                     return key
             
-    # Creating Instance of needed hosts ande saving it to the agents dictionary
+    # Creating Instance of needed hosts ande saving it to the agents dictionary 
     async def getAgentInstance(self, agent_name):
-        print(f"CORE> Starting prosody client {agent_name}")
+        logging.info(f"Manager> Starting prosody client {agent_name}")
         agent_mapping = {
             "responder": ResponderAgent,
             "vehicle": SupplyVehicleAgent,
@@ -62,10 +62,10 @@ class AgentManager(metaclass=SingletonMeta):
 
     async def removeAgentInstance(self, key):
         if key in self.agents:
-            logging.info(f"CORE> Removing agent {key}")
+            logging.info(f"Manager> Removing agent {key}")
             self.agents[key] = None
         else:
-            logging.error(f"CORE> Key '{key}' does not exist.") 
+            logging.error(f"Manager> Key '{key}' does not exist.") 
 
     #
     # Looking for empty slot in dictionary by keys "agent_name{i}@localhost"

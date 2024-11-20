@@ -45,8 +45,7 @@ class Environment(metaclass=SingletonMeta):
     async def updatePositionVehicle(self, x_curr, y_curr, x_next, y_next, init):
         if not init and self.board[x_curr][y_curr].emergency != "Base":
             self.board[x_curr][y_curr].emergency = "Safe"
-        else:
-            print(f"INIT = {self.board[x_next][y_next].emergency}")
+
         if self.board[x_next][y_next].emergency != "Base":
             self.board[x_next][y_next].emergency = "Vehicle"
 
