@@ -48,12 +48,15 @@ class Environment(metaclass=SingletonMeta):
         await self.board[x_pos][y_pos].setBlockageStatus(True)
 
 
+    async def getTileStatus(self, x_pos, y_pos):
+        return await self.board[x_pos][y_pos].getEmergency()
+
     async def getTile(self, x_axis, y_axis):
         return self.board[x_axis][y_axis].getTileData()
 
-    async def updatePositionVehicle(self, x_curr, y_curr, x_next, y_next, init):
-        if not init and self.board[x_curr][y_curr].emergency != "Base":
-            self.board[x_curr][y_curr].emergency = "Safe"
+    async def updatePositionVehicle(self, x_curr, y_curr, x_next, y_next, init, prev_status):
+        if not init and self.board[x_curr][y_curr].emergency != "Base" and prev_status != "Vehicle":
+            self.board[x_curr][y_curr].emergency = prev_status
 
         if self.board[x_next][y_next].emergency != "Base":
             self.board[x_next][y_next].emergency = "Vehicle"

@@ -65,11 +65,16 @@ class StateNavigate(State):
             # Find the optimal path
             path = a_star_search(heuristic, start_position, destination, self.agent.environment.board)
             if path:
+                prev_status = None
                 for step in path:
                     logging.info(f"Vehicle> Moving to position: {step}")
 
-                    await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False)
+                    status_temp = await self.agent.environment.getTileStatus(step[0], step[1])
+
+                    await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False, prev_status)
                     self.agent.x_pos, self.agent.y_pos = step
+
+                    prev_status = status_temp
 
                     await asyncio.sleep(1)
                 logging.info("Vehicle> Reached destination.")
@@ -127,11 +132,16 @@ class StateBackToBase(State):
         destination = (4, 2)
         path = a_star_search(heuristic, start_position, destination, self.agent.environment.board)
         if path:
+            prev_status = await self.agent.environment.getTileStatus(start_position[0], start_position[1])
             for step in path:
                 logging.info(f"Vehicle> Moving to position: {step}")
 
-                await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False)
+                status_temp = await self.agent.environment.getTileStatus(step[0], step[1])
+
+                await self.agent.environment.updatePositionVehicle(self.agent.x_pos, self.agent.y_pos, step[0], step[1], False, prev_status)
                 self.agent.x_pos, self.agent.y_pos = step
+
+                prev_status = status_temp
 
                 await asyncio.sleep(1)
             logging.info("Vehicle> Back in base.")
@@ -215,7 +225,7 @@ class SupplyVehicleAgent(Agent):
         logging.info(f"Re-prioritized queue: {self.priority_queue}")
 
     async def setup(self):
-        await self.environment.updatePositionVehicle(0, 0, self.x_pos, self.y_pos, True)
+        await self.environment.updatePositionVehicle(0, 0, self.x_pos, self.y_pos, True, "")
 
         behaviour = FSMBehaviour()
         behaviour.add_state(name=STATE_IDLE, state=StateIdle(), initial=True)

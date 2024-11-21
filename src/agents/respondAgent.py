@@ -27,7 +27,7 @@ class ResponderBehaviour(FSMBehaviour):
 class StateReceiveCivilianRequest(State):
     async def run(self):
         logging.info("Responder> Waiting for civilian requests...")
-
+        timeout = 0
         self.agent.civilian_requests = []
         while len(self.agent.civilian_requests) < 3:
             msg = await self.receive(timeout=10)
@@ -35,6 +35,11 @@ class StateReceiveCivilianRequest(State):
                 data = parseMessage(msg.body)
                 logging.info(f"Responder> Received a request: {data}")
                 self.agent.civilian_requests.append(data)
+            else:
+                timeout += 1
+
+            if timeout > 3:
+                break
 
         self.set_next_state(STATE_PRIORITIZE_REQUESTS)
 
