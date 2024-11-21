@@ -3,6 +3,7 @@ from spade.message import Message
 from spade.behaviour import CyclicBehaviour
 
 from shared.logger import logging
+from shared.utils import generate_needs
 
 import asyncio
 import random
@@ -41,23 +42,28 @@ class DisasterAgent(Agent):
             emergency_settings = {
                 "x_position": x_pos,
                 "y_position": y_pos,
-                "status": "Fire",
-                "food": 32904,
-                "people": 92313,
-                "medicine": 154,
+                "status": generate_needs(),
+                "food": random.randint(1, 1234567),
+                "people": random.randint(1, 1234567),
+                "medicine": random.randint(1, 1234567),
                 "blockage": False,
                 "communication": True,
             }
 
             try:
-                civilian_host = await self.agent.manager.getCivilianJid()
-                if civilian_host is None:
-                    raise ValueError("Disaster> No civilian host found.")
-                
-                await self.env.setTile(emergency_settings)
-                logging.info(f"Disaster> Setting emergency at [{x_pos}, {y_pos}]")
+                changed_tile = await self.env.setTile(emergency_settings)
 
-                await self.sendMessage(str(civilian_host), x_pos, y_pos)
+                if changed_tile:
+
+                    civilian_host = await self.agent.manager.getCivilianJid()
+                    if civilian_host is None:
+                        raise ValueError("Disaster> No civilian host found.")
+
+                    logging.info(f"Disaster> Setting emergency at [{x_pos}, {y_pos}]")
+
+                    await self.sendMessage(str(civilian_host), x_pos, y_pos)
+                else:
+                    logging.info("Disaster> Cannot place disaster in Base tile,")
 
             except Exception as e:
                 logging.info(f"ERROR> Could not create disaster or send message: {e}")

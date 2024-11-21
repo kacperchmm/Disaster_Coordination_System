@@ -26,6 +26,13 @@ class Environment(metaclass=SingletonMeta):
         x = value["x_position"]
         y = value["y_position"]
 
+        #
+        # Avoid hard-coded base coordinates
+        #
+
+        if value["status"] != "Base" and x == 4 and y == 2:
+            return False
+
         if value["status"] == "Safe":
             await self.board[x][y].removeEmergency()
         elif value["status"] == "Base" or value["status"] == "Vehicle" or value["status"] == "Shelter" or value["status"] == "Rescued":
@@ -35,6 +42,7 @@ class Environment(metaclass=SingletonMeta):
             await self.board[x][y].setDisaster(value)
 
         self.display()
+        return True
 
     async def setBlockageTile(self, x_pos, y_pos):
         await self.board[x_pos][y_pos].setBlockageStatus(True)
