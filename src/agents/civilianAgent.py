@@ -66,9 +66,11 @@ class StateWaitForHelp(State):
     async def run(self):
         logging.info("Civilian> Waiting for help")
         msg = await self.receive(timeout=60)
-        if msg and msg.metadata("ontology") == "rescued":
-            logging.info("Civilian> Recieved message = " + msg.body)
+        if msg and msg.get_metadata("ontology") == "rescued":
+            logging.info(f"Civilian> Recieved message = {msg.body}")
             self.set_next_state(STATE_PEACE)
+        else:
+            self.set_next_state(STATE_WAIT_FOR_HELP)
 
 
 class StateGoodBye(State):
@@ -106,6 +108,7 @@ class CivilianAgent(Agent):
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_ASK_FOR_HELP)
         behaviour.add_transition(source=STATE_PEACE, dest=STATE_PEACE)
         behaviour.add_transition(source=STATE_ASK_FOR_HELP, dest=STATE_WAIT_FOR_HELP)
+        behaviour.add_transition(source=STATE_WAIT_FOR_HELP, dest=STATE_WAIT_FOR_HELP)
         behaviour.add_transition(source=STATE_WAIT_FOR_HELP, dest=STATE_PEACE)
 
         self.created_behaviours["state_machine"] = behaviour

@@ -14,7 +14,8 @@ import asyncio
 
 STATE_REQUEST_RESOURCES = "STATE_REQUEST_RESOURCES"
 STATE_RECEIVE_SUPPLIES = "STATE_RECEIVE_SUPPLIES"
-STATE_REPORT_INVENTORY = "STATE_REPORT_INVENTORY"
+STATE_RESCUE = "STATE_RESCUE"
+STATE_CLOSE = "STATE_CLOSE"
 
 class ShelterBehaviour(FSMBehaviour):
     async def on_start(self):
@@ -54,10 +55,10 @@ class StateReceiveSupplies(State):
 
                 await self.agent.setInventory(need, int(msg.body))
         
-        self.set_next_state(STATE_REPORT_INVENTORY)
+        self.set_next_state(STATE_RESCUE)
 
 
-class StateReportInventory(State):
+class StateRescue(State):
     async def run(self):
         logging.info(f"Shelter> Current inventory: {self.agent.inventory}")
         logging.info(f"Shelter> Current needs: {self.agent.needs}")
@@ -77,8 +78,15 @@ class StateReportInventory(State):
         msg_rescued.body = rescue_msg
         await self.send(msg_rescued)
 
-        self.set_next_state(STATE_REQUEST_RESOURCES)
+        self.set_next_state(STATE_CLOSE)
 
+class StateClose(State):
+    async def run(self):
+        agent_jid = str(self.agent.jid)
+
+        logging.info(f"Shelter> Closing shelter agent {agent_jid}")
+
+        await self.agent.manager.removeAgentInstance(agent_jid)
 
 class ShelterAgent(Agent):
     def __init__(self, jid, password, environment, manager):
@@ -129,13 +137,15 @@ class ShelterAgent(Agent):
         # Adding states to the FSM
         behaviour.add_state(name=STATE_REQUEST_RESOURCES, state=StateRequestResources(), initial=True)
         behaviour.add_state(name=STATE_RECEIVE_SUPPLIES, state=StateReceiveSupplies())
-        behaviour.add_state(name=STATE_REPORT_INVENTORY, state=StateReportInventory())
+        behaviour.add_state(name=STATE_RESCUE, state=StateRescue())
+        behaviour.add_state(name=STATE_CLOSE, state=StateClose())
+
 
         # Define transitions between states
         behaviour.add_transition(source=STATE_REQUEST_RESOURCES, dest=STATE_RECEIVE_SUPPLIES)
-        behaviour.add_transition(source=STATE_RECEIVE_SUPPLIES, dest=STATE_REPORT_INVENTORY)
+        behaviour.add_transition(source=STATE_RECEIVE_SUPPLIES, dest=STATE_RESCUE)
         behaviour.add_transition(source=STATE_REQUEST_RESOURCES, dest=STATE_REQUEST_RESOURCES)
-        behaviour.add_transition(source=STATE_REPORT_INVENTORY, dest=STATE_REQUEST_RESOURCES)
+        behaviour.add_transition(source=STATE_RESCUE, dest=STATE_CLOSE)
 
         # Add behaviour to agent and register
         self.add_behaviour(behaviour)

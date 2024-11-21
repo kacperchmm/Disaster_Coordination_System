@@ -60,10 +60,11 @@ class AgentManager(metaclass=SingletonMeta):
                     logging.info(f"CORE> Agent type '{agent_name}' is not implemented.")
                     return ":)"
 
-    async def removeAgentInstance(self, key):
-        if key in self.agents:
-            logging.info(f"Manager> Removing agent {key}")
-            self.agents[key] = None
+    async def removeAgentInstance(self, host_name):
+        for key, _ in self.agents.items():
+            if key == host_name:
+                logging.info(f"Manager> Removing agent {host_name}")
+                self.agents[host_name] = None
         else:
             logging.error(f"Manager> Key '{key}' does not exist.") 
 
@@ -73,8 +74,8 @@ class AgentManager(metaclass=SingletonMeta):
     #
 
     async def responderListening(self, key, agent_name):
-        logging.info(f"Agent> looking for {agent_name} on {key}")
         if agent_name.startswith("responder") and key.startswith("responder") and self.agents[key] != None:
+            logging.info(f"Agent> looking for {agent_name} on {key}")
             return await self.agents[key].getState() == "STATE_RECEIVE_CIVILIAN_REQUEST"
 
     async def getFirstAvailableHost(self, agent_name):
