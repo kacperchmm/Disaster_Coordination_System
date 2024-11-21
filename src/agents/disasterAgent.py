@@ -67,8 +67,18 @@ class DisasterAgent(Agent):
             delay = random.uniform(1,6)
             await asyncio.sleep(delay)
 
+    async def initBlockage(self):
+        for i in range(5):
+            x_pos = random.randint(0, self.env.size - 1)
+            y_pos = random.randint(0, self.env.size - 1)
+
+            logging.info(f"Disaster> Setting blockage on ({x_pos}, {y_pos})")
+
+            await self.env.setBlockageTile(x_pos, y_pos)
+
     async def setup(self):
         logging.info("Disaster> Creating disasters.")
+        await self.initBlockage()
         disaster_behaviour = self.NewDisasterBehaviour(self.env)
         self.add_behaviour(disaster_behaviour)
 

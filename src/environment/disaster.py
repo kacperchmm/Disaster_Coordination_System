@@ -98,7 +98,10 @@ class Disaster:
 
     def __repr__(self):
         if self.emergency == "Safe":
-            return '0'
+            if self.blockage_status == True:
+                return '\033[31m0\033[0m'   # Red color for Blockage
+            else:
+                return '0'
         elif self.emergency == "Base":
             return '\033[32mB\033[0m'       # Green color for Base tile
         elif self.emergency == "Vehicle":
