@@ -79,7 +79,7 @@ class Disaster:
     async def setBlockageStatus(self, value):
         self.blockage_status = value
     
-    async def getBlockageStatus(self):
+    def getBlockageStatus(self):
         return self.blockage_status
     
     async def setCommunication(self, value):
@@ -98,7 +98,10 @@ class Disaster:
 
     def __repr__(self):
         if self.emergency == "Safe":
-            return '0'
+            if self.getBlockageStatus() == True:
+                return '\033[31m0\033[0m'   # Red color for Blockage
+            else:
+                return '0'
         elif self.emergency == "Base":
             return '\033[32mB\033[0m'       # Green color for Base tile
         elif self.emergency == "Vehicle":

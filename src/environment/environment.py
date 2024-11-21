@@ -38,6 +38,9 @@ class Environment(metaclass=SingletonMeta):
 
         self.display()
 
+    async def setBlockageTile(self, x_pos, y_pos):
+        await self.board[x_pos][y_pos].setBlockageStatus(True)
+
 
     async def getTile(self, x_axis, y_axis):
         return self.board[x_axis][y_axis].getTileData()
