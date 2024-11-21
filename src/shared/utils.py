@@ -75,7 +75,7 @@ def get_neighbors(position, board):
     for dx, dy in directions:
         nx, ny = x + dx, y + dy
         # check if the neighbor is within bounds and accessible
-        if 0 <= nx < len(board) and 0 <= ny < len(board[0]) and board[nx][ny] != 'obstacle':
+        if 0 <= nx < len(board) and 0 <= ny < len(board[0]) and board[nx][ny].getBlockageStatus() == False:
             neighbors.append((nx, ny))
     return neighbors
 
